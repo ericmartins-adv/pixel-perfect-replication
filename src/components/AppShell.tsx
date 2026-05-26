@@ -20,7 +20,7 @@ const NAV = [
 ] as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const hydrated = useHydrated();
+  const hydrated = useClientMounted();
   const sessao = useMansoStore((s) => s.sessao);
   const router = useRouter();
 
