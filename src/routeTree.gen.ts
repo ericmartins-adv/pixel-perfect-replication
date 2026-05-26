@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SociosRouteImport } from './routes/socios'
+import { Route as ReunioesRouteImport } from './routes/reunioes'
 import { Route as OrcamentoRouteImport } from './routes/orcamento'
 import { Route as ObraRouteImport } from './routes/obra'
 import { Route as MinhaPosicaoRouteImport } from './routes/minha-posicao'
@@ -21,6 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const SociosRoute = SociosRouteImport.update({
   id: '/socios',
   path: '/socios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReunioesRoute = ReunioesRouteImport.update({
+  id: '/reunioes',
+  path: '/reunioes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrcamentoRoute = OrcamentoRouteImport.update({
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/minha-posicao': typeof MinhaPosicaoRoute
   '/obra': typeof ObraRoute
   '/orcamento': typeof OrcamentoRoute
+  '/reunioes': typeof ReunioesRoute
   '/socios': typeof SociosRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/minha-posicao': typeof MinhaPosicaoRoute
   '/obra': typeof ObraRoute
   '/orcamento': typeof OrcamentoRoute
+  '/reunioes': typeof ReunioesRoute
   '/socios': typeof SociosRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/minha-posicao': typeof MinhaPosicaoRoute
   '/obra': typeof ObraRoute
   '/orcamento': typeof OrcamentoRoute
+  '/reunioes': typeof ReunioesRoute
   '/socios': typeof SociosRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/minha-posicao'
     | '/obra'
     | '/orcamento'
+    | '/reunioes'
     | '/socios'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/minha-posicao'
     | '/obra'
     | '/orcamento'
+    | '/reunioes'
     | '/socios'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/minha-posicao'
     | '/obra'
     | '/orcamento'
+    | '/reunioes'
     | '/socios'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   MinhaPosicaoRoute: typeof MinhaPosicaoRoute
   ObraRoute: typeof ObraRoute
   OrcamentoRoute: typeof OrcamentoRoute
+  ReunioesRoute: typeof ReunioesRoute
   SociosRoute: typeof SociosRoute
 }
 
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/socios'
       fullPath: '/socios'
       preLoaderRoute: typeof SociosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reunioes': {
+      id: '/reunioes'
+      path: '/reunioes'
+      fullPath: '/reunioes'
+      preLoaderRoute: typeof ReunioesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orcamento': {
@@ -203,6 +223,7 @@ const rootRouteChildren: RootRouteChildren = {
   MinhaPosicaoRoute: MinhaPosicaoRoute,
   ObraRoute: ObraRoute,
   OrcamentoRoute: OrcamentoRoute,
+  ReunioesRoute: ReunioesRoute,
   SociosRoute: SociosRoute,
 }
 export const routeTree = rootRouteImport
