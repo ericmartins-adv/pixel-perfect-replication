@@ -1,16 +1,41 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://mbjchxsyeqmcctydhybm.supabase.co'
-const supabaseKey = 'sb_publishable_42DU8qS9wxFmJlgxasR3Ew_mfStktrn'
+const SUPABASE_URL = 'https://mbjchxsyeqmcctydhybm.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_42DU8qS9wxFmJlgxasR3Ew_mfStktrn'
 
-// SSR-safe: no servidor Node.js não existe localStorage nem window.
-// Passamos undefined como storage e desativamos auto-refresh/detectSessionInUrl
-// para evitar crash durante o SSR do TanStack Start.
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    persistSession: typeof window !== 'undefined',
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    autoRefreshToken: typeof window !== 'undefined',
-    detectSessionInUrl: typeof window !== 'undefined',
+// Lazy singleton — createClient só é chamado no browser, nunca no servidor Node.js.
+// Durante o SSR, todas as chamadas retornam imediatamente sem efeito.
+let _client: SupabaseClient | null = null
+
+function getRealClient(): SupabaseClient {
+  if (!_client) {
+    _client = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
+  }
+  return _client
+}
+
+// No-op recursivo para SSR: qualquer acesso retorna uma função que retorna
+// uma Promise resolvida vazia, ou outro no-op.
+function makeNoop(): any {
+  const fn: any = () => Promise.resolve({ data: null, error: null })
+  return new Proxy(fn, {
+    get: () => makeNoop(),
+    apply: () => Promise.resolve({ data: null, error: null }),
+  })
+}
+
+// Proxy transparente: no browser usa o client real, no servidor usa no-op.
+export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
+  get(_target, prop: string) {
+    if (typeof window === 'undefined') return makeNoop()
+    const client = getRealClient()
+    const val = (client as any)[prop]
+    return typeof val === 'function' ? val.bind(client) : val
   },
 })
