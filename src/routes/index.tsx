@@ -9,14 +9,13 @@ export const Route = createFileRoute("/")({ component: LoginPage });
 function LoginPage() {
   const router = useRouter();
   const sessao = useMansoStore((s) => s.sessao);
-  const loading = useMansoStore((s) => s.loading);
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (sessao && !loading) router.navigate({ to: "/dashboard" });
-  }, [sessao, loading, router]);
+    if (sessao) router.navigate({ to: "/dashboard" });
+  }, [sessao, router]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

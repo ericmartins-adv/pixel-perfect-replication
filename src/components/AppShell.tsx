@@ -29,19 +29,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // SSR: sem chrome
   if (!hydrated) return <>{children}</>;
 
-  // Auth carregando (verificando sessão Supabase)
-  if (loading && !sessao) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <Loader2 className="size-8 animate-spin" />
-          <p className="text-sm">Verificando acesso…</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Não autenticado → mostra a rota de login
+  // Não autenticado (ou ainda verificando sessão) → mostra a rota de login
   if (!sessao) return <>{children}</>;
 
   const socio = getSocio(sessao);
