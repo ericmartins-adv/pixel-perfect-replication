@@ -2,15 +2,19 @@
  * Post-build script: converte a saída do Vite (dist/) para o
  * formato Vercel Build Output API (.vercel/output/).
  *
+ * O Vite SSR externaliza node_modules, então usamos esbuild para criar
+ * um bundle completamente auto-contido para a função Vercel.
+ *
  * Estrutura gerada:
  *   .vercel/output/static/              ← assets do cliente (JS, CSS, SVG…)
- *   .vercel/output/functions/ssr.func/  ← função SSR Node.js 20
+ *   .vercel/output/functions/ssr.func/  ← função SSR Node.js 20 (bundled)
  *   .vercel/output/config.json          ← regras de roteamento
  */
 
 import { cpSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { build } from 'esbuild'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = resolve(__dirname, '..')
@@ -28,12 +32,41 @@ console.log('✓ Assets estáticos copiados')
 const funcDir = resolve(root, '.vercel/output/functions/ssr.func')
 mkdirSync(funcDir, { recursive: true })
 
-// Copia o servidor Node.js inteiro para dentro do pacote da função
-cpSync(resolve(root, 'dist/server'), resolve(funcDir, 'dist/server'), { recursive: true })
-console.log('✓ Servidor copiado para o pacote da função')
+// Bundla o servidor TanStack Start com todas as dependências (esbuild)
+// Isso resolve o problema de node_modules não estarem disponíveis na função
+console.log('⏳ Bundlando servidor SSR com esbuild...')
+await build({
+  entryPoints: [resolve(root, 'dist/server/server.js')],
+  outfile: resolve(funcDir, 'server-bundle.js'),
+  bundle: true,
+  platform: 'node',
+  target: 'node20',
+  format: 'esm',
+  // Apenas módulos built-in do Node.js são externos
+  external: [
+    'node:*',
+    // Módulos nativos sem prefixo node: para compatibilidade
+    'stream', 'fs', 'path', 'os', 'crypto', 'url', 'http', 'https',
+    'net', 'tls', 'zlib', 'events', 'util', 'buffer', 'assert',
+    'querystring', 'child_process', 'worker_threads', 'perf_hooks',
+    'async_hooks', 'readline', 'string_decoder', 'timers', 'dns',
+    'domain', 'punycode', 'vm',
+  ],
+  // Permite imports dinâmicos (necessário para TanStack Start)
+  splitting: false,
+  // Evita warnings de top-level await
+  logLevel: 'warning',
+  // Permite require() em contexto ESM caso algum pacote antigo use CJS
+  banner: {
+    js: `
+import { createRequire as __createRequire } from 'module';
+const require = __createRequire(import.meta.url);
+`.trim(),
+  },
+})
+console.log('✓ Servidor bundlado com sucesso')
 
-// Handler da função — TanStack Start exporta um handler Fetch API como default export
-// A função é: (request: Request) => Promise<Response>
+// Handler da função — importa o bundle auto-contido
 const handlerCode = `
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -43,18 +76,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 let _handler = null
 async function getHandler() {
   if (!_handler) {
-    const mod = await import(join(__dirname, 'dist/server/server.js'))
-    // TanStack Start exporta a função handler como default
-    // Pode ser: mod.default, mod.default.fetch, ou mod.fetch
+    const mod = await import(join(__dirname, 'server-bundle.js'))
+    // TanStack Start exporta: export default { fetch: (req: Request) => Response }
     const exp = mod.default ?? mod
     if (typeof exp?.fetch === 'function') {
-      // Objeto com método fetch (ex: Hono, H3 wrapped)
       _handler = (req) => exp.fetch(req)
     } else if (typeof exp === 'function') {
-      // Função direta (request: Request) => Response — padrão TanStack Start
       _handler = exp
     } else {
-      throw new Error('Formato de handler SSR não reconhecido: ' + typeof exp)
+      const keys = Object.keys(exp ?? {}).join(', ')
+      throw new Error('Formato de handler SSR não reconhecido. Exports: ' + keys)
     }
   }
   return _handler
@@ -64,7 +95,6 @@ export default async function handler(req, res) {
   try {
     const fetchHandler = await getHandler()
 
-    // Converte Node.js IncomingMessage → Fetch Request
     const proto = req.headers['x-forwarded-proto'] || 'https'
     const host  = req.headers['x-forwarded-host'] || req.headers.host || 'localhost'
     const url   = new URL(req.url ?? '/', \`\${proto}://\${host}\`)
@@ -75,7 +105,7 @@ export default async function handler(req, res) {
       else if (v != null) headers.set(k, String(v))
     }
 
-    let body
+    let body = null
     if (req.method && !['GET', 'HEAD'].includes(req.method.toUpperCase())) {
       const chunks = []
       for await (const chunk of req) chunks.push(chunk)
@@ -89,17 +119,16 @@ export default async function handler(req, res) {
       duplex: body ? 'half' : undefined,
     })
 
-    // Chama o handler Fetch API do TanStack Start
     const response = await fetchHandler(fetchRequest)
 
     res.statusCode = response.status
     response.headers.forEach((v, k) => res.setHeader(k, v))
-    const buf = Buffer.from(await response.arrayBuffer())
-    res.end(buf)
+    res.end(Buffer.from(await response.arrayBuffer()))
   } catch (e) {
-    console.error('[SSR Error]', e)
+    console.error('[SSR Error]', e?.message ?? e)
+    console.error(e?.stack)
     res.statusCode = 500
-    res.end('Internal Server Error: ' + e.message)
+    res.end('Internal Server Error: ' + (e?.message ?? String(e)))
   }
 }
 `.trimStart()
