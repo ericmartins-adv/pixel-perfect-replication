@@ -129,7 +129,7 @@ function NovoLancamentoModal({ currentUser, onClose }: { currentUser: SocioId; o
   const [tipo, setTipo] = useState<LancamentoTipo>("despesa");
   const [data, setData] = useState(new Date().toISOString().slice(0, 10));
   const [descricao, setDescricao] = useState("");
-  const [categoria, setCategoria] = useState<Categoria>("Obra");
+  const [categoria, setCategoria] = useState<Categoria>("Outras despesas");
   const [valor, setValor] = useState("");
   const [responsavel, setResponsavel] = useState<SocioId>(currentUser);
   const [rateioModo, setRateioModo] = useState<"igual" | "individual">("igual");

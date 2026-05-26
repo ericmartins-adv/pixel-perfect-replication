@@ -10,8 +10,15 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SociosRouteImport } from './routes/socios'
+import { Route as ReunioesRouteImport } from './routes/reunioes'
+import { Route as RelatoriosRouteImport } from './routes/relatorios'
+import { Route as OrcamentoRouteImport } from './routes/orcamento'
+import { Route as ObraRouteImport } from './routes/obra'
+import { Route as MinhaPosicaoRouteImport } from './routes/minha-posicao'
 import { Route as LancamentosRouteImport } from './routes/lancamentos'
+import { Route as DocumentosRouteImport } from './routes/documentos'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SociosRoute = SociosRouteImport.update({
@@ -19,14 +26,49 @@ const SociosRoute = SociosRouteImport.update({
   path: '/socios',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReunioesRoute = ReunioesRouteImport.update({
+  id: '/reunioes',
+  path: '/reunioes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatoriosRoute = RelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrcamentoRoute = OrcamentoRouteImport.update({
+  id: '/orcamento',
+  path: '/orcamento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObraRoute = ObraRouteImport.update({
+  id: '/obra',
+  path: '/obra',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MinhaPosicaoRoute = MinhaPosicaoRouteImport.update({
+  id: '/minha-posicao',
+  path: '/minha-posicao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LancamentosRoute = LancamentosRouteImport.update({
   id: '/lancamentos',
   path: '/lancamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocumentosRoute = DocumentosRouteImport.update({
+  id: '/documentos',
+  path: '/documentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlertasRoute = AlertasRouteImport.update({
+  id: '/alertas',
+  path: '/alertas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,35 +79,97 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/alertas': typeof AlertasRoute
   '/dashboard': typeof DashboardRoute
+  '/documentos': typeof DocumentosRoute
   '/lancamentos': typeof LancamentosRoute
+  '/minha-posicao': typeof MinhaPosicaoRoute
+  '/obra': typeof ObraRoute
+  '/orcamento': typeof OrcamentoRoute
+  '/relatorios': typeof RelatoriosRoute
+  '/reunioes': typeof ReunioesRoute
   '/socios': typeof SociosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/alertas': typeof AlertasRoute
   '/dashboard': typeof DashboardRoute
+  '/documentos': typeof DocumentosRoute
   '/lancamentos': typeof LancamentosRoute
+  '/minha-posicao': typeof MinhaPosicaoRoute
+  '/obra': typeof ObraRoute
+  '/orcamento': typeof OrcamentoRoute
+  '/relatorios': typeof RelatoriosRoute
+  '/reunioes': typeof ReunioesRoute
   '/socios': typeof SociosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/alertas': typeof AlertasRoute
   '/dashboard': typeof DashboardRoute
+  '/documentos': typeof DocumentosRoute
   '/lancamentos': typeof LancamentosRoute
+  '/minha-posicao': typeof MinhaPosicaoRoute
+  '/obra': typeof ObraRoute
+  '/orcamento': typeof OrcamentoRoute
+  '/relatorios': typeof RelatoriosRoute
+  '/reunioes': typeof ReunioesRoute
   '/socios': typeof SociosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/lancamentos' | '/socios'
+  fullPaths:
+    | '/'
+    | '/alertas'
+    | '/dashboard'
+    | '/documentos'
+    | '/lancamentos'
+    | '/minha-posicao'
+    | '/obra'
+    | '/orcamento'
+    | '/relatorios'
+    | '/reunioes'
+    | '/socios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/lancamentos' | '/socios'
-  id: '__root__' | '/' | '/dashboard' | '/lancamentos' | '/socios'
+  to:
+    | '/'
+    | '/alertas'
+    | '/dashboard'
+    | '/documentos'
+    | '/lancamentos'
+    | '/minha-posicao'
+    | '/obra'
+    | '/orcamento'
+    | '/relatorios'
+    | '/reunioes'
+    | '/socios'
+  id:
+    | '__root__'
+    | '/'
+    | '/alertas'
+    | '/dashboard'
+    | '/documentos'
+    | '/lancamentos'
+    | '/minha-posicao'
+    | '/obra'
+    | '/orcamento'
+    | '/relatorios'
+    | '/reunioes'
+    | '/socios'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AlertasRoute: typeof AlertasRoute
   DashboardRoute: typeof DashboardRoute
+  DocumentosRoute: typeof DocumentosRoute
   LancamentosRoute: typeof LancamentosRoute
+  MinhaPosicaoRoute: typeof MinhaPosicaoRoute
+  ObraRoute: typeof ObraRoute
+  OrcamentoRoute: typeof OrcamentoRoute
+  RelatoriosRoute: typeof RelatoriosRoute
+  ReunioesRoute: typeof ReunioesRoute
   SociosRoute: typeof SociosRoute
 }
 
@@ -78,6 +182,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SociosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reunioes': {
+      id: '/reunioes'
+      path: '/reunioes'
+      fullPath: '/reunioes'
+      preLoaderRoute: typeof ReunioesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorios': {
+      id: '/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof RelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orcamento': {
+      id: '/orcamento'
+      path: '/orcamento'
+      fullPath: '/orcamento'
+      preLoaderRoute: typeof OrcamentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/obra': {
+      id: '/obra'
+      path: '/obra'
+      fullPath: '/obra'
+      preLoaderRoute: typeof ObraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/minha-posicao': {
+      id: '/minha-posicao'
+      path: '/minha-posicao'
+      fullPath: '/minha-posicao'
+      preLoaderRoute: typeof MinhaPosicaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lancamentos': {
       id: '/lancamentos'
       path: '/lancamentos'
@@ -85,11 +224,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LancamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/documentos': {
+      id: '/documentos'
+      path: '/documentos'
+      fullPath: '/documentos'
+      preLoaderRoute: typeof DocumentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alertas': {
+      id: '/alertas'
+      path: '/alertas'
+      fullPath: '/alertas'
+      preLoaderRoute: typeof AlertasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -104,8 +257,15 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AlertasRoute: AlertasRoute,
   DashboardRoute: DashboardRoute,
+  DocumentosRoute: DocumentosRoute,
   LancamentosRoute: LancamentosRoute,
+  MinhaPosicaoRoute: MinhaPosicaoRoute,
+  ObraRoute: ObraRoute,
+  OrcamentoRoute: OrcamentoRoute,
+  RelatoriosRoute: RelatoriosRoute,
+  ReunioesRoute: ReunioesRoute,
   SociosRoute: SociosRoute,
 }
 export const routeTree = rootRouteImport
