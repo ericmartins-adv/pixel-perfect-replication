@@ -1,5 +1,9 @@
-// Store local (MVP frontend-only) para Manso Villa
+// Store Manso Villa — Supabase-backed
+// Auth: Supabase Auth (email/senha + Google OAuth)
+// Dados: Supabase Postgres com RLS
+// Cache local: localStorage para leitura síncrona e offline
 import { useSyncExternalStore } from "react";
+import { supabase } from "./supabase";
 
 export type SocioId = "eric" | "michael" | "heryk";
 
@@ -7,11 +11,9 @@ export interface Socio {
   id: SocioId;
   nome: string;
   email: string;
-  senha: string;
   iniciais: string;
   cor: string;
-  cpf?: string;
-  apelidos: string[]; // para reconhecimento em extratos
+  apelidos: string[];
 }
 
 export const SOCIOS: Socio[] = [
@@ -19,7 +21,6 @@ export const SOCIOS: Socio[] = [
     id: "eric",
     nome: "Eric Fernando de Souza Martins",
     email: "eric@mansovilla.app",
-    senha: "manso123",
     iniciais: "EM",
     cor: "#1A6B72",
     apelidos: ["ERIC", "FERNANDO", "MARTINS"],
@@ -28,7 +29,6 @@ export const SOCIOS: Socio[] = [
     id: "michael",
     nome: "Michael Kazuo Furuta",
     email: "michael@mansovilla.app",
-    senha: "manso123",
     iniciais: "MF",
     cor: "#8E44AD",
     apelidos: ["MICHAEL", "KAZUO", "FURUTA"],
@@ -37,7 +37,6 @@ export const SOCIOS: Socio[] = [
     id: "heryk",
     nome: "Heryk de Deus Pereira",
     email: "heryk@mansovilla.app",
-    senha: "manso123",
     iniciais: "HP",
     cor: "#E67E22",
     apelidos: ["HERYK", "PEREIRA"],
@@ -83,7 +82,7 @@ export interface Lancamento {
   rateio: Record<SocioId, number>;
   criadoPor: SocioId;
   criadoEm: string;
-  faseId?: string; // vincula a etapa da obra
+  faseId?: string;
 }
 
 export interface Tarefa {
@@ -106,121 +105,14 @@ export interface FaseObra {
 }
 
 export const FASES_INICIAIS: FaseObra[] = [
-  {
-    id: "f0",
-    numero: "0",
-    titulo: "Pré-projeto",
-    tarefas: [
-      "Regularização documental (escritura, matrícula, convenção)",
-      "Pesquisa e escolha do escritório de arquitetura",
-      "Definição do programa de necessidades (briefing da casa)",
-      "Estudo de viabilidade financeira da obra",
-    ].map(t => ({ id: crypto.randomUUID?.() ?? Math.random().toString(36), titulo: t, concluida: false })),
-  },
-  {
-    id: "f1",
-    numero: "1",
-    titulo: "Estudos e Levantamentos",
-    tarefas: [
-      "Sondagem e estudo do solo (SPT / ensaio de carga)",
-      "Levantamento planialtimétrico e topográfico",
-      "Levantamento da situação atual do terreno",
-      "Estudo de insolação e ventos predominantes",
-    ].map(t => ({ id: crypto.randomUUID?.() ?? Math.random().toString(36), titulo: t, concluida: false })),
-  },
-  {
-    id: "f2",
-    numero: "2",
-    titulo: "Aprovações e Licenças",
-    tarefas: [
-      "Aprovação do anteprojeto pelo condomínio",
-      "Aprovação do projeto pela Prefeitura de Chapada dos Guimarães",
-      "Alvará de construção",
-      "ART / RRT do arquiteto e engenheiros",
-      "Licença ambiental (APP do lago do Manso)",
-    ].map(t => ({ id: crypto.randomUUID?.() ?? Math.random().toString(36), titulo: t, concluida: false })),
-  },
-  {
-    id: "f3",
-    numero: "3",
-    titulo: "Projetos Técnicos",
-    tarefas: [
-      "Projeto Arquitetônico (anteprojeto + executivo)",
-      "Projeto Estrutural",
-      "Projeto Elétrico e Automação",
-      "Projeto Hidrossanitário",
-      "Projeto de Climatização",
-      "Projeto de Cobertura e Impermeabilização",
-      "Projeto Luminotécnico",
-      "Projeto Paisagístico",
-      "Projeto de Segurança",
-      "Projeto de Piscina (a decidir)",
-      "Memorial descritivo e especificações",
-      "Planilha orçamentária (SINAPI)",
-    ].map(t => ({ id: crypto.randomUUID?.() ?? Math.random().toString(36), titulo: t, concluida: false })),
-  },
-  {
-    id: "f4",
-    numero: "4",
-    titulo: "Preparação para Obra",
-    tarefas: [
-      "Escolha e contratação da construtora",
-      "Contratação de seguro da obra",
-      "Aprovação do cronograma físico-financeiro",
-      "Contratação de gerenciadora ou fiscal de obras",
-      "Instalação do canteiro de obras",
-    ].map(t => ({ id: crypto.randomUUID?.() ?? Math.random().toString(36), titulo: t, concluida: false })),
-  },
-  {
-    id: "f5",
-    numero: "5",
-    titulo: "Execução da Obra",
-    tarefas: [
-      "Terraplanagem e preparação do terreno",
-      "Locação da edificação",
-      "Fundações",
-      "Estrutura (pilares, vigas, lajes)",
-      "Alvenaria e vedação",
-      "Cobertura e telhado",
-      "Instalações elétricas e lógica",
-      "Instalações hidráulicas e sanitárias",
-      "Impermeabilização",
-      "Revestimentos internos",
-      "Revestimentos externos",
-      "Esquadrias (portas, janelas, vidros)",
-      "Área de lazer / pergolado",
-      "Instalação de ar-condicionado",
-      "Sistema de energia solar (a decidir)",
-      "Pintura interna e externa",
-      "Louças, metais e bancadas",
-      "Paisagismo e jardinagem",
-    ].map(t => ({ id: crypto.randomUUID?.() ?? Math.random().toString(36), titulo: t, concluida: false })),
-  },
-  {
-    id: "f6",
-    numero: "6",
-    titulo: "Finalização",
-    tarefas: [
-      "Limpeza final e entrega da obra",
-      "Vistoria técnica e punch list",
-      "Emissão do Habite-se",
-      "Carta de Liberação do Condomínio",
-      "Averbação da construção na matrícula",
-      "Atualização do IPTU com nova área construída",
-    ].map(t => ({ id: crypto.randomUUID?.() ?? Math.random().toString(36), titulo: t, concluida: false })),
-  },
-  {
-    id: "f7",
-    numero: "7",
-    titulo: "Implantação e Mobiliamento",
-    tarefas: [
-      "Móveis planejados (cozinha, dormitórios, área de serviço)",
-      "Móveis soltos e decoração",
-      "Eletrodomésticos e equipamentos",
-      "Itens de lazer (churrasqueira, equipamentos náuticos)",
-      "Casa pronta para uso 🏖️",
-    ].map(t => ({ id: crypto.randomUUID?.() ?? Math.random().toString(36), titulo: t, concluida: false })),
-  },
+  { id: "f0", numero: "0", titulo: "Pré-projeto", tarefas: [] },
+  { id: "f1", numero: "1", titulo: "Estudos e Levantamentos", tarefas: [] },
+  { id: "f2", numero: "2", titulo: "Aprovações e Licenças", tarefas: [] },
+  { id: "f3", numero: "3", titulo: "Projetos Técnicos", tarefas: [] },
+  { id: "f4", numero: "4", titulo: "Preparação para Obra", tarefas: [] },
+  { id: "f5", numero: "5", titulo: "Execução da Obra", tarefas: [] },
+  { id: "f6", numero: "6", titulo: "Finalização", tarefas: [] },
+  { id: "f7", numero: "7", titulo: "Implantação e Mobiliamento", tarefas: [] },
 ];
 
 export type DocCategoria =
@@ -255,7 +147,7 @@ export interface Votacao {
   valor?: number;
   criadoPor: SocioId;
   criadoEm: string;
-  prazo: string; // ISO
+  prazo: string;
   votos: Record<SocioId, { status: VotoStatus; justificativa?: string; em?: string }>;
   decisao: "pendente" | "aprovada" | "rejeitada";
 }
@@ -271,12 +163,13 @@ export interface Reuniao {
 
 export interface Configuracoes {
   metaObra: number;
-  percReserva: number; // 0..100
+  percReserva: number;
   modeloFinanceiro: "fundo-comum" | "reembolso-direto";
 }
 
 interface State {
   sessao: SocioId | null;
+  loading: boolean;
   lancamentos: Lancamento[];
   fases: FaseObra[];
   documentos: Documento[];
@@ -285,75 +178,121 @@ interface State {
   config: Configuracoes;
 }
 
-const KEY = "manso-villa-state-v2";
+// ── Mappers DB → App ─────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapLancamento(r: any): Lancamento {
+  return {
+    id: r.id,
+    data: r.data,
+    tipo: r.tipo,
+    descricao: r.descricao,
+    categoria: r.categoria,
+    valor: Number(r.valor),
+    responsavel: r.responsavel,
+    rateio: r.rateio ?? {},
+    criadoPor: r.criado_por,
+    criadoEm: r.criado_em,
+    faseId: r.fase_id ?? undefined,
+  };
+}
 
-const seedLancamentos: Lancamento[] = [
-  { id: "s1", data: "2026-01-15", tipo: "receita", descricao: "Aporte inicial — compra do lote", categoria: "Aporte", valor: 93351.52, responsavel: "eric", rateio: { eric: 93351.52, michael: 0, heryk: 0 }, criadoPor: "eric", criadoEm: "2026-01-15T10:00:00Z" },
-  { id: "s2", data: "2026-01-15", tipo: "receita", descricao: "Aporte inicial — compra do lote", categoria: "Aporte", valor: 93351.52, responsavel: "michael", rateio: { eric: 0, michael: 93351.52, heryk: 0 }, criadoPor: "michael", criadoEm: "2026-01-15T10:00:00Z" },
-  { id: "s3", data: "2026-01-15", tipo: "receita", descricao: "Aporte inicial — compra do lote", categoria: "Aporte", valor: 93351.51, responsavel: "heryk", rateio: { eric: 0, michael: 0, heryk: 93351.51 }, criadoPor: "heryk", criadoEm: "2026-01-15T10:00:00Z" },
-  { id: "s4", data: "2026-01-20", tipo: "despesa", descricao: "Aquisição do Lote 01 - Quadra R", categoria: "Outras despesas", valor: 280054.55, responsavel: "eric", rateio: { eric: 93351.52, michael: 93351.52, heryk: 93351.51 }, criadoPor: "eric", criadoEm: "2026-01-20T14:00:00Z" },
-  { id: "s5", data: "2026-03-10", tipo: "despesa", descricao: "Taxa de condomínio - Março", categoria: "Taxa de Condomínio", valor: 890, responsavel: "michael", rateio: { eric: 296.67, michael: 296.67, heryk: 296.66 }, criadoPor: "michael", criadoEm: "2026-03-10T09:00:00Z" },
-  { id: "s6", data: "2026-04-05", tipo: "receita", descricao: "Aporte mensal - Abril", categoria: "Aporte", valor: 5000, responsavel: "heryk", rateio: { eric: 0, michael: 0, heryk: 5000 }, criadoPor: "heryk", criadoEm: "2026-04-05T08:00:00Z" },
-];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapTarefa(r: any): Tarefa {
+  return {
+    id: r.id,
+    titulo: r.titulo,
+    concluida: r.concluida,
+    dataPrevista: r.data_prevista ?? undefined,
+    dataRealizada: r.data_realizada ?? undefined,
+    custoOrcado: r.custo_orcado != null ? Number(r.custo_orcado) : undefined,
+    custoReal: r.custo_real != null ? Number(r.custo_real) : undefined,
+    responsavel: r.responsavel ?? undefined,
+    observacao: r.observacao ?? undefined,
+  };
+}
 
-const seedVotacoes: Votacao[] = [
-  {
-    id: "v1",
-    titulo: "Incluir piscina no projeto?",
-    descricao: "Acréscimo estimado de R$ 85.000 na obra. Decisão impacta o projeto arquitetônico.",
-    valor: 85000,
-    criadoPor: "eric",
-    criadoEm: new Date(Date.now() - 1 * 86400000).toISOString(),
-    prazo: new Date(Date.now() + 2 * 86400000).toISOString(),
-    votos: {
-      eric: { status: "aprovado", em: new Date().toISOString() },
-      michael: { status: "pendente" },
-      heryk: { status: "pendente" },
-    },
-    decisao: "pendente",
-  },
-];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapDocumento(r: any): Documento {
+  return {
+    id: r.id,
+    nome: r.nome,
+    categoria: r.categoria,
+    tamanhoKb: Number(r.tamanho_kb),
+    uploadEm: r.upload_em,
+    uploadPor: r.upload_por,
+    validadeEm: r.validade_em ?? undefined,
+    tags: r.tags ?? [],
+    notas: r.notas ?? undefined,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapVotacao(r: any): Votacao {
+  return {
+    id: r.id,
+    titulo: r.titulo,
+    descricao: r.descricao,
+    valor: r.valor != null ? Number(r.valor) : undefined,
+    criadoPor: r.criado_por,
+    criadoEm: r.criado_em,
+    prazo: r.prazo,
+    votos: r.votos ?? {},
+    decisao: r.decisao,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapReuniao(r: any): Reuniao {
+  return {
+    id: r.id,
+    data: r.data,
+    titulo: r.titulo,
+    participantes: r.participantes ?? [],
+    pauta: r.pauta,
+    deliberacoes: r.deliberacoes,
+  };
+}
+
+// ── Estado ───────────────────────────────────────────────────────
+const KEY = "manso-villa-state-v3";
+
+const defaultConfig: Configuracoes = { metaObra: 850000, percReserva: 15, modeloFinanceiro: "fundo-comum" };
 
 const initialState: State = {
   sessao: null,
-  lancamentos: seedLancamentos,
+  loading: true,
+  lancamentos: [],
   fases: FASES_INICIAIS,
   documentos: [],
-  votacoes: seedVotacoes,
+  votacoes: [],
   reunioes: [],
-  config: { metaObra: 850000, percReserva: 15, modeloFinanceiro: "fundo-comum" },
+  config: defaultConfig,
 };
 
-function load(): State {
-  if (typeof window === "undefined") return initialState;
+function loadCache(): Partial<State> {
+  if (typeof window === "undefined") return {};
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return initialState;
-    const parsed = JSON.parse(raw) as Partial<State>;
-    return { ...initialState, ...parsed };
+    return raw ? JSON.parse(raw) : {};
   } catch {
-    return initialState;
+    return {};
   }
 }
 
-let state: State = initialState;
-let hydrated = false;
+let state: State = { ...initialState, ...loadCache(), loading: true };
 const listeners = new Set<() => void>();
 
-function hydrate() {
-  if (hydrated || typeof window === "undefined") return;
-  hydrated = true;
-  state = load();
+function notify() {
   listeners.forEach((l) => l());
 }
 
 function persist() {
-  if (typeof window !== "undefined") localStorage.setItem(KEY, JSON.stringify(state));
-  listeners.forEach((l) => l());
+  if (typeof window === "undefined") return;
+  const { loading: _l, ...rest } = state;
+  localStorage.setItem(KEY, JSON.stringify(rest));
 }
 
 function subscribe(l: () => void) {
-  hydrate();
   listeners.add(l);
   return () => listeners.delete(l);
 }
@@ -366,75 +305,247 @@ export function useMansoStore<T>(selector: (s: State) => T): T {
   );
 }
 
-const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+// ── Carga de dados do Supabase ───────────────────────────────────
+async function loadAllData() {
+  try {
+    const [
+      { data: lancamentos },
+      { data: fases },
+      { data: tarefas },
+      { data: documentos },
+      { data: votacoes },
+      { data: reunioes },
+      { data: config },
+    ] = await Promise.all([
+      supabase.from("lancamentos").select("*").order("data", { ascending: false }),
+      supabase.from("fases").select("*").order("ordem"),
+      supabase.from("tarefas").select("*"),
+      supabase.from("documentos").select("*").order("upload_em", { ascending: false }),
+      supabase.from("votacoes").select("*").order("criado_em", { ascending: false }),
+      supabase.from("reunioes").select("*").order("data", { ascending: false }),
+      supabase.from("configuracoes").select("*").eq("id", 1).single(),
+    ]);
 
-export const actions = {
-  login(email: string, senha: string): Socio | null {
-    const s = SOCIOS.find((x) => x.email.toLowerCase() === email.toLowerCase() && x.senha === senha);
-    if (!s) return null;
-    state = { ...state, sessao: s.id };
+    const fasesComTarefas: FaseObra[] = (fases ?? []).map((f) => ({
+      id: f.id,
+      numero: f.numero,
+      titulo: f.titulo,
+      tarefas: (tarefas ?? []).filter((t) => t.fase_id === f.id).map(mapTarefa),
+    }));
+
+    state = {
+      ...state,
+      loading: false,
+      lancamentos: (lancamentos ?? []).map(mapLancamento),
+      fases: fasesComTarefas.length > 0 ? fasesComTarefas : FASES_INICIAIS,
+      documentos: (documentos ?? []).map(mapDocumento),
+      votacoes: (votacoes ?? []).map(mapVotacao),
+      reunioes: (reunioes ?? []).map(mapReuniao),
+      config: config
+        ? { metaObra: Number(config.meta_obra), percReserva: Number(config.perc_reserva), modeloFinanceiro: config.modelo_financeiro }
+        : defaultConfig,
+    };
     persist();
-    return s;
-  },
-  logout() { state = { ...state, sessao: null }; persist(); },
+    notify();
+  } catch (err) {
+    console.error("[Store] Erro ao carregar dados:", err);
+    state = { ...state, loading: false };
+    notify();
+  }
+}
 
+// ── Auth listener (inicia no carregamento do módulo) ─────────────
+if (typeof window !== "undefined") {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user) {
+      const socio = SOCIOS.find(
+        (s) => s.email.toLowerCase() === (session.user.email ?? "").toLowerCase()
+      );
+      state = { ...state, sessao: socio?.id ?? null, loading: !!socio };
+      notify();
+      if (socio) loadAllData();
+      else {
+        state = { ...state, loading: false };
+        notify();
+      }
+    } else {
+      state = { ...state, sessao: null, loading: false };
+      notify();
+    }
+  });
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === "SIGNED_IN" && session?.user) {
+      const socio = SOCIOS.find(
+        (s) => s.email.toLowerCase() === (session.user.email ?? "").toLowerCase()
+      );
+      if (socio) {
+        state = { ...state, sessao: socio.id };
+        notify();
+        loadAllData();
+      } else {
+        // Email não autorizado
+        supabase.auth.signOut();
+        state = { ...state, sessao: null, loading: false };
+        notify();
+      }
+    } else if (event === "SIGNED_OUT") {
+      state = { ...initialState, loading: false };
+      persist();
+      notify();
+    }
+  });
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+const uid = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
+
+// ── Actions ──────────────────────────────────────────────────────
+export const actions = {
+  // Auth
+  async login(email: string, senha: string): Promise<Socio | null> {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
+    if (error || !data.user) return null;
+    const socio = SOCIOS.find((s) => s.email.toLowerCase() === email.toLowerCase());
+    return socio ?? null;
+  },
+
+  async loginGoogle(): Promise<void> {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: typeof window !== "undefined" ? `${window.location.origin}/dashboard` : "/dashboard" },
+    });
+  },
+
+  async logout() {
+    await supabase.auth.signOut();
+  },
+
+  // Lançamentos
   addLancamento(l: Omit<Lancamento, "id" | "criadoEm">) {
     const novo: Lancamento = { ...l, id: uid(), criadoEm: new Date().toISOString() };
     state = { ...state, lancamentos: [novo, ...state.lancamentos] };
     persist();
+    notify();
+    supabase.from("lancamentos").insert({
+      id: novo.id, data: novo.data, tipo: novo.tipo, descricao: novo.descricao,
+      categoria: novo.categoria, valor: novo.valor, responsavel: novo.responsavel,
+      rateio: novo.rateio, criado_por: novo.criadoPor, criado_em: novo.criadoEm,
+      fase_id: novo.faseId ?? null,
+    }).then(({ error }) => { if (error) console.error("[Supabase] addLancamento:", error); });
   },
+
   removeLancamento(id: string) {
     state = { ...state, lancamentos: state.lancamentos.filter((x) => x.id !== id) };
     persist();
+    notify();
+    supabase.from("lancamentos").delete().eq("id", id)
+      .then(({ error }) => { if (error) console.error("[Supabase] removeLancamento:", error); });
   },
+
   addLancamentosBulk(arr: Omit<Lancamento, "id" | "criadoEm">[]) {
     const novos = arr.map((l) => ({ ...l, id: uid(), criadoEm: new Date().toISOString() }));
     state = { ...state, lancamentos: [...novos, ...state.lancamentos] };
     persist();
+    notify();
+    const rows = novos.map((novo) => ({
+      id: novo.id, data: novo.data, tipo: novo.tipo, descricao: novo.descricao,
+      categoria: novo.categoria, valor: novo.valor, responsavel: novo.responsavel,
+      rateio: novo.rateio, criado_por: novo.criadoPor, criado_em: novo.criadoEm,
+      fase_id: novo.faseId ?? null,
+    }));
+    supabase.from("lancamentos").insert(rows)
+      .then(({ error }) => { if (error) console.error("[Supabase] addLancamentosBulk:", error); });
   },
 
+  // Tarefas
   toggleTarefa(faseId: string, tarefaId: string) {
+    let novoStatus = false;
     state = {
       ...state,
       fases: state.fases.map((f) =>
         f.id !== faseId ? f : {
           ...f,
-          tarefas: f.tarefas.map((t) =>
-            t.id !== tarefaId ? t : { ...t, concluida: !t.concluida, dataRealizada: !t.concluida ? new Date().toISOString().slice(0, 10) : undefined },
-          ),
-        },
+          tarefas: f.tarefas.map((t) => {
+            if (t.id !== tarefaId) return t;
+            novoStatus = !t.concluida;
+            return { ...t, concluida: novoStatus, dataRealizada: novoStatus ? new Date().toISOString().slice(0, 10) : undefined };
+          }),
+        }
       ),
     };
     persist();
+    notify();
+    supabase.from("tarefas").update({
+      concluida: novoStatus,
+      data_realizada: novoStatus ? new Date().toISOString().slice(0, 10) : null,
+    }).eq("id", tarefaId)
+      .then(({ error }) => { if (error) console.error("[Supabase] toggleTarefa:", error); });
   },
+
   updateTarefa(faseId: string, tarefaId: string, patch: Partial<Tarefa>) {
     state = {
       ...state,
       fases: state.fases.map((f) =>
-        f.id !== faseId ? f : { ...f, tarefas: f.tarefas.map((t) => (t.id !== tarefaId ? t : { ...t, ...patch })) },
+        f.id !== faseId ? f : { ...f, tarefas: f.tarefas.map((t) => (t.id !== tarefaId ? t : { ...t, ...patch })) }
       ),
     };
     persist();
+    notify();
+    const dbPatch: Record<string, unknown> = {};
+    if (patch.concluida !== undefined) dbPatch.concluida = patch.concluida;
+    if (patch.dataPrevista !== undefined) dbPatch.data_prevista = patch.dataPrevista;
+    if (patch.dataRealizada !== undefined) dbPatch.data_realizada = patch.dataRealizada;
+    if (patch.custoOrcado !== undefined) dbPatch.custo_orcado = patch.custoOrcado;
+    if (patch.custoReal !== undefined) dbPatch.custo_real = patch.custoReal;
+    if (patch.responsavel !== undefined) dbPatch.responsavel = patch.responsavel;
+    if (patch.observacao !== undefined) dbPatch.observacao = patch.observacao;
+    supabase.from("tarefas").update(dbPatch).eq("id", tarefaId)
+      .then(({ error }) => { if (error) console.error("[Supabase] updateTarefa:", error); });
   },
 
+  // Documentos
   addDocumento(d: Omit<Documento, "id" | "uploadEm">) {
     const novo: Documento = { ...d, id: uid(), uploadEm: new Date().toISOString() };
     state = { ...state, documentos: [novo, ...state.documentos] };
     persist();
+    notify();
+    supabase.from("documentos").insert({
+      id: novo.id, nome: novo.nome, categoria: novo.categoria,
+      tamanho_kb: novo.tamanhoKb, upload_em: novo.uploadEm,
+      upload_por: novo.uploadPor, validade_em: novo.validadeEm ?? null,
+      tags: novo.tags, notas: novo.notas ?? null,
+    }).then(({ error }) => { if (error) console.error("[Supabase] addDocumento:", error); });
   },
+
   removeDocumento(id: string) {
     state = { ...state, documentos: state.documentos.filter((d) => d.id !== id) };
     persist();
+    notify();
+    supabase.from("documentos").delete().eq("id", id)
+      .then(({ error }) => { if (error) console.error("[Supabase] removeDocumento:", error); });
   },
 
+  // Votações
   addVotacao(v: Omit<Votacao, "id" | "criadoEm" | "votos" | "decisao">) {
     const votos = Object.fromEntries(SOCIOS.map((s) => [s.id, { status: "pendente" as VotoStatus }])) as Votacao["votos"];
     votos[v.criadoPor] = { status: "aprovado", em: new Date().toISOString() };
     const novo: Votacao = { ...v, id: uid(), criadoEm: new Date().toISOString(), votos, decisao: "pendente" };
     state = { ...state, votacoes: [novo, ...state.votacoes] };
     persist();
+    notify();
+    supabase.from("votacoes").insert({
+      id: novo.id, titulo: novo.titulo, descricao: novo.descricao,
+      valor: novo.valor ?? null, criado_por: novo.criadoPor,
+      criado_em: novo.criadoEm, prazo: novo.prazo, votos: novo.votos, decisao: novo.decisao,
+    }).then(({ error }) => { if (error) console.error("[Supabase] addVotacao:", error); });
   },
+
   votar(votacaoId: string, socio: SocioId, status: VotoStatus, justificativa?: string) {
+    let updatedVotacao: Votacao | null = null;
     state = {
       ...state,
       votacoes: state.votacoes.map((v) => {
@@ -443,29 +554,55 @@ export const actions = {
         const aprov = Object.values(votos).filter((x) => x.status === "aprovado").length;
         const rejei = Object.values(votos).filter((x) => x.status === "rejeitado").length;
         const decisao: Votacao["decisao"] = aprov >= 2 ? "aprovada" : rejei >= 2 ? "rejeitada" : "pendente";
-        return { ...v, votos, decisao };
+        updatedVotacao = { ...v, votos, decisao };
+        return updatedVotacao;
       }),
     };
     persist();
+    notify();
+    if (updatedVotacao) {
+      supabase.from("votacoes").update({ votos: updatedVotacao.votos, decisao: updatedVotacao.decisao }).eq("id", votacaoId)
+        .then(({ error }) => { if (error) console.error("[Supabase] votar:", error); });
+    }
   },
 
+  // Reuniões
   addReuniao(r: Omit<Reuniao, "id">) {
-    state = { ...state, reunioes: [{ ...r, id: uid() }, ...state.reunioes] };
+    const novo: Reuniao = { ...r, id: uid() };
+    state = { ...state, reunioes: [novo, ...state.reunioes] };
     persist();
+    notify();
+    supabase.from("reunioes").insert({
+      id: novo.id, data: novo.data, titulo: novo.titulo,
+      participantes: novo.participantes, pauta: novo.pauta, deliberacoes: novo.deliberacoes,
+    }).then(({ error }) => { if (error) console.error("[Supabase] addReuniao:", error); });
   },
 
+  // Configurações
   updateConfig(patch: Partial<Configuracoes>) {
     state = { ...state, config: { ...state.config, ...patch } };
     persist();
+    notify();
+    const dbPatch: Record<string, unknown> = {};
+    if (patch.metaObra !== undefined) dbPatch.meta_obra = patch.metaObra;
+    if (patch.percReserva !== undefined) dbPatch.perc_reserva = patch.percReserva;
+    if (patch.modeloFinanceiro !== undefined) dbPatch.modelo_financeiro = patch.modeloFinanceiro;
+    supabase.from("configuracoes").update(dbPatch).eq("id", 1)
+      .then(({ error }) => { if (error) console.error("[Supabase] updateConfig:", error); });
   },
 
   resetarTudo() {
-    state = initialState;
+    state = { ...initialState, loading: false };
     persist();
+    notify();
   },
 };
 
-export function getSocio(id: SocioId): Socio { return SOCIOS.find((s) => s.id === id)!; }
+// ── Helpers exportados ───────────────────────────────────────────
+export function getSocio(id: SocioId): Socio {
+  return SOCIOS.find((s) => s.id === id)!;
+}
+
 export function formatBRL(v: number): string {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -503,7 +640,6 @@ export function progressoGeral(fases: FaseObra[]): number {
   return total ? (feitas / total) * 100 : 0;
 }
 
-// Heurística simples de detecção de aporte por descrição OFX
 export function sugerirSocio(descricao: string): SocioId | null {
   const up = descricao.toUpperCase();
   for (const s of SOCIOS) {
@@ -512,7 +648,6 @@ export function sugerirSocio(descricao: string): SocioId | null {
   return null;
 }
 
-// Parser OFX simples
 export interface OfxTx {
   data: string;
   valor: number;
@@ -531,16 +666,13 @@ export function parseOFX(content: string): OfxTx[] {
     };
     const valor = parseFloat(get("TRNAMT").replace(",", "."));
     const dtRaw = get("DTPOSTED").slice(0, 8);
-    const data = dtRaw.length === 8 ? `${dtRaw.slice(0, 4)}-${dtRaw.slice(4, 6)}-${dtRaw.slice(6, 8)}` : new Date().toISOString().slice(0, 10);
+    const data =
+      dtRaw.length === 8
+        ? `${dtRaw.slice(0, 4)}-${dtRaw.slice(4, 6)}-${dtRaw.slice(6, 8)}`
+        : new Date().toISOString().slice(0, 10);
     const memo = get("MEMO") || get("NAME") || "Transação";
     if (isNaN(valor)) continue;
-    txs.push({
-      data,
-      valor: Math.abs(valor),
-      tipo: valor >= 0 ? "credito" : "debito",
-      descricao: memo,
-      fitId: get("FITID"),
-    });
+    txs.push({ data, valor: Math.abs(valor), tipo: valor >= 0 ? "credito" : "debito", descricao: memo, fitId: get("FITID") });
   }
   return txs;
 }

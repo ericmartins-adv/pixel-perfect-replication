@@ -1,7 +1,7 @@
-import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { actions, SOCIOS, useMansoStore } from "@/lib/manso-store";
-import { Anchor, Mail, Lock } from "lucide-react";
+import { actions, useMansoStore } from "@/lib/manso-store";
+import { Anchor, Mail, Lock, Chrome } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({ component: LoginPage });
@@ -9,35 +9,54 @@ export const Route = createFileRoute("/")({ component: LoginPage });
 function LoginPage() {
   const router = useRouter();
   const sessao = useMansoStore((s) => s.sessao);
+  const loading = useMansoStore((s) => s.loading);
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (sessao) router.navigate({ to: "/dashboard" });
-  }, [sessao, router]);
+    if (sessao && !loading) router.navigate({ to: "/dashboard" });
+  }, [sessao, loading, router]);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const s = actions.login(email, senha);
-    if (!s) return toast.error("E-mail ou senha inválidos");
-    toast.success(`Bem-vindo, ${s.nome.split(" ")[0]}`);
-    router.navigate({ to: "/dashboard" });
+    setSubmitting(true);
+    try {
+      const s = await actions.login(email, senha);
+      if (!s) {
+        toast.error("E-mail ou senha inválidos");
+      } else {
+        toast.success(`Bem-vindo, ${s.nome.split(" ")[0]}`);
+        router.navigate({ to: "/dashboard" });
+      }
+    } catch {
+      toast.error("Erro ao conectar. Tente novamente.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const quick = (id: string) => {
-    const s = SOCIOS.find((x) => x.id === id)!;
-    setEmail(s.email);
-    setSenha(s.senha);
+  const loginGoogle = async () => {
+    try {
+      await actions.loginGoogle();
+      // Redireciona para o Google — a página será recarregada ao voltar
+    } catch {
+      toast.error("Erro ao iniciar login com Google.");
+    }
   };
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      {/* esquerda — visual */}
+      {/* Esquerda — visual */}
       <div className="hidden lg:flex bg-deep-gradient relative overflow-hidden p-12 flex-col justify-between text-white">
-        <div className="absolute inset-0 opacity-[0.07]" style={{
-          backgroundImage: "radial-gradient(circle at 20% 20%, white 1px, transparent 1px), radial-gradient(circle at 80% 60%, white 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }} />
+        <div
+          className="absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 20% 20%, white 1px, transparent 1px), radial-gradient(circle at 80% 60%, white 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+          }}
+        />
         <div className="relative flex items-center gap-2">
           <Anchor className="size-5 text-[var(--gold)]" />
           <span className="font-serif text-2xl">Manso Villa</span>
@@ -62,7 +81,7 @@ function LoginPage() {
         </div>
       </div>
 
-      {/* direita — form */}
+      {/* Direita — formulário */}
       <div className="flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-2 mb-8">
@@ -71,12 +90,14 @@ function LoginPage() {
           </div>
           <h2 className="font-serif text-3xl">Entrar</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Acesso restrito aos três sócios do projeto.
+            Acesso restrito aos sócios do projeto.
           </p>
 
           <form onSubmit={submit} className="mt-8 space-y-4">
             <label className="block">
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">E-mail</span>
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                E-mail
+              </span>
               <div className="mt-1.5 relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <input
@@ -85,12 +106,15 @@ function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-3 py-2.5 rounded-md border border-input bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-                  placeholder="eric@mansovilla.app"
+                  placeholder="nome@mansovilla.app"
                 />
               </div>
             </label>
+
             <label className="block">
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Senha</span>
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Senha
+              </span>
               <div className="mt-1.5 relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <input
@@ -103,43 +127,37 @@ function LoginPage() {
                 />
               </div>
             </label>
+
             <button
               type="submit"
-              className="w-full py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition"
+              disabled={submitting}
+              className="w-full py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition disabled:opacity-60"
             >
-              Entrar no projeto
+              {submitting ? "Entrando…" : "Entrar no projeto"}
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-border">
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-3">
-              Acesso rápido (demo)
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {SOCIOS.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => quick(s.id)}
-                  className="flex flex-col items-center gap-1.5 p-2 rounded-md border border-border hover:border-ring transition"
-                >
-                  <div
-                    className="size-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
-                    style={{ backgroundColor: s.cor }}
-                  >
-                    {s.iniciais}
-                  </div>
-                  <span className="text-[10px] text-muted-foreground truncate w-full text-center">
-                    {s.nome.split(" ")[0]}
-                  </span>
-                </button>
-              ))}
+          <div className="mt-4">
+            <div className="relative flex items-center gap-2 text-xs text-muted-foreground my-4">
+              <div className="flex-1 border-t border-border" />
+              <span>ou</span>
+              <div className="flex-1 border-t border-border" />
             </div>
-            <p className="text-[10px] text-muted-foreground mt-3 text-center">
-              Senha demo: <code className="bg-muted px-1.5 py-0.5 rounded">manso123</code>
-            </p>
+
+            <button
+              type="button"
+              onClick={loginGoogle}
+              className="w-full py-2.5 rounded-md border border-input bg-card text-sm font-medium hover:bg-accent hover:text-accent-foreground transition flex items-center justify-center gap-2"
+            >
+              <Chrome className="size-4" />
+              Entrar com Google
+            </button>
           </div>
 
-          <Link to="/dashboard" className="hidden" />
+          <p className="mt-6 text-center text-[11px] text-muted-foreground">
+            Acesso exclusivo para os sócios cadastrados.
+            <br />Problemas? Entre em contato com o administrador.
+          </p>
         </div>
       </div>
     </div>

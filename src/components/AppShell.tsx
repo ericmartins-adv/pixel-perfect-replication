@@ -3,7 +3,7 @@ import { useClientMounted } from "@/hooks/use-client-mounted";
 import { actions, getSocio, useMansoStore } from "@/lib/manso-store";
 import {
   Anchor, LogOut, LayoutDashboard, Receipt, Users, Hammer,
-  Target, FileText, Vote, BarChart3, Bell, User, Upload,
+  Target, FileText, Vote, BarChart3, Bell, User, Upload, Loader2,
 } from "lucide-react";
 
 const NAV = [
@@ -23,10 +23,27 @@ const NAV = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const hydrated = useClientMounted();
   const sessao = useMansoStore((s) => s.sessao);
+  const loading = useMansoStore((s) => s.loading);
   const router = useRouter();
 
-  // Sem chrome durante SSR e quando não há sessão → evita hydration mismatch
-  if (!hydrated || !sessao) return <>{children}</>;
+  // SSR: sem chrome
+  if (!hydrated) return <>{children}</>;
+
+  // Auth carregando (verificando sessão Supabase)
+  if (loading && !sessao) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Loader2 className="size-8 animate-spin" />
+          <p className="text-sm">Verificando acesso…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Não autenticado → mostra a rota de login
+  if (!sessao) return <>{children}</>;
+
   const socio = getSocio(sessao);
 
   return (
@@ -63,7 +80,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="px-3 py-3 border-t border-sidebar-border/40">
           <div className="flex items-center gap-3 px-2 py-2">
-            <div className="size-9 rounded-full flex items-center justify-center text-sm font-semibold text-white" style={{ backgroundColor: socio.cor }}>
+            <div
+              className="size-9 rounded-full flex items-center justify-center text-sm font-semibold text-white shrink-0"
+              style={{ backgroundColor: socio.cor }}
+            >
               {socio.iniciais}
             </div>
             <div className="min-w-0 flex-1">
@@ -71,7 +91,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <p className="text-[10px] text-sidebar-foreground/55 truncate">{socio.email}</p>
             </div>
             <button
-              onClick={() => { actions.logout(); router.navigate({ to: "/" }); }}
+              onClick={async () => {
+                await actions.logout();
+                router.navigate({ to: "/" });
+              }}
               className="text-sidebar-foreground/60 hover:text-sidebar-foreground p-1.5 rounded hover:bg-sidebar-accent"
               aria-label="Sair"
             >
@@ -82,6 +105,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <main className="flex-1 min-w-0 overflow-x-hidden">
+        {/* Loading overlay quando atualiza dados após login */}
+        {loading && (
+          <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-card border border-border rounded-full px-3 py-1.5 shadow text-xs text-muted-foreground">
+            <Loader2 className="size-3 animate-spin" />
+            Sincronizando dados…
+          </div>
+        )}
         {children}
       </main>
     </div>
