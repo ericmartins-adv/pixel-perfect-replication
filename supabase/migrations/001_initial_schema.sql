@@ -13,16 +13,36 @@ alter table profiles enable row level security;
 drop policy if exists "users_own_profile" on profiles;
 create policy "users_own_profile" on profiles for all using (auth.uid() = id);
 
--- Trigger: cria profile automaticamente quando o sócio faz login pela 1ª vez
+-- Permite que a função trigger (security definer) leia a tabela
+drop policy if exists "service_role_profiles" on profiles;
+create policy "service_role_profiles" on profiles for all to service_role using (true);
+
+-- Trigger: mapeia email → sócio automaticamente ao criar usuário
+-- Adicione aqui os e-mails reais de cada sócio (Gmail, etc.)
 create or replace function handle_new_user()
 returns trigger as $$
+declare
+  v_socio_id text;
 begin
-  case lower(new.email)
-    when 'eric@mansovilla.app'    then insert into profiles (id, socio_id) values (new.id, 'eric')    on conflict (id) do nothing;
-    when 'michael@mansovilla.app' then insert into profiles (id, socio_id) values (new.id, 'michael') on conflict (id) do nothing;
-    when 'heryk@mansovilla.app'   then insert into profiles (id, socio_id) values (new.id, 'heryk')   on conflict (id) do nothing;
-    else null;
-  end case;
+  v_socio_id := case lower(new.email)
+    -- E-mails @mansovilla.app (login padrão)
+    when 'eric@mansovilla.app'    then 'eric'
+    when 'michael@mansovilla.app' then 'michael'
+    when 'heryk@mansovilla.app'   then 'heryk'
+    -- E-mails pessoais dos sócios (Google OAuth ou cadastro manual)
+    when 'ericfsmartins@gmail.com' then 'eric'
+    -- Adicione abaixo os e-mails pessoais de Michael e Heryk:
+    -- when 'email.do.michael@gmail.com' then 'michael'
+    -- when 'email.do.heryk@gmail.com'   then 'heryk'
+    else null
+  end;
+
+  if v_socio_id is not null then
+    insert into profiles (id, socio_id)
+    values (new.id, v_socio_id)
+    on conflict (id) do nothing;
+  end if;
+
   return new;
 end;
 $$ language plpgsql security definer;

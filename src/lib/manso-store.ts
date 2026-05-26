@@ -354,16 +354,34 @@ async function loadAllData() {
   }
 }
 
+// ── Resolução de sócio a partir de sessão Supabase ───────────────
+// 1. Tenta match direto por email (emails @mansovilla.app)
+// 2. Se não encontrar, consulta tabela `profiles` (mapeia qualquer email/OAuth → sócio)
+async function resolverSocio(user: { id: string; email?: string | null }): Promise<SocioId | null> {
+  // Match direto por email
+  const porEmail = SOCIOS.find(
+    (s) => s.email.toLowerCase() === (user.email ?? "").toLowerCase()
+  );
+  if (porEmail) return porEmail.id;
+
+  // Consulta tabela profiles
+  const { data } = await supabase
+    .from("profiles")
+    .select("socio_id")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (data?.socio_id) return data.socio_id as SocioId;
+  return null;
+}
+
 // ── Auth listener (inicia no carregamento do módulo) ─────────────
 if (typeof window !== "undefined") {
-  supabase.auth.getSession().then(({ data: { session } }) => {
+  supabase.auth.getSession().then(async ({ data: { session } }) => {
     if (session?.user) {
-      const socio = SOCIOS.find(
-        (s) => s.email.toLowerCase() === (session.user.email ?? "").toLowerCase()
-      );
-      state = { ...state, sessao: socio?.id ?? null, loading: !!socio };
+      const socioId = await resolverSocio(session.user);
+      state = { ...state, sessao: socioId, loading: !!socioId };
       notify();
-      if (socio) loadAllData();
+      if (socioId) loadAllData();
       else {
         state = { ...state, loading: false };
         notify();
@@ -374,18 +392,16 @@ if (typeof window !== "undefined") {
     }
   });
 
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === "SIGNED_IN" && session?.user) {
-      const socio = SOCIOS.find(
-        (s) => s.email.toLowerCase() === (session.user.email ?? "").toLowerCase()
-      );
-      if (socio) {
-        state = { ...state, sessao: socio.id };
+      const socioId = await resolverSocio(session.user);
+      if (socioId) {
+        state = { ...state, sessao: socioId };
         notify();
         loadAllData();
       } else {
-        // Email não autorizado
-        supabase.auth.signOut();
+        // Usuário autenticado mas não é sócio cadastrado
+        await supabase.auth.signOut();
         state = { ...state, sessao: null, loading: false };
         notify();
       }
