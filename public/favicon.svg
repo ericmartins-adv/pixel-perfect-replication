@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="108" fill="#0c2340"/>
+
+  <!-- Subtle water ripple at bottom -->
+  <ellipse cx="256" cy="412" rx="110" ry="14" fill="#1A6B72" opacity="0.35"/>
+  <ellipse cx="256" cy="424" rx="80" ry="9" fill="#1A6B72" opacity="0.2"/>
+
+  <!-- Anchor ring (top) -->
+  <circle cx="256" cy="110" r="38" fill="none" stroke="#D4B483" stroke-width="22"/>
+
+  <!-- Shaft -->
+  <rect x="245" y="147" width="22" height="222" rx="11" fill="#D4B483"/>
+
+  <!-- Stock (horizontal bar) -->
+  <rect x="152" y="180" width="208" height="22" rx="11" fill="#D4B483"/>
+  <!-- Stock end circles -->
+  <circle cx="152" cy="191" r="13" fill="#D4B483"/>
+  <circle cx="360" cy="191" r="13" fill="#D4B483"/>
+
+  <!-- Arms (curved, from bottom of shaft) -->
+  <path d="M 256 369 C 240 369 196 360 172 332" fill="none" stroke="#D4B483" stroke-width="22" stroke-linecap="round"/>
+  <path d="M 256 369 C 272 369 316 360 340 332" fill="none" stroke="#D4B483" stroke-width="22" stroke-linecap="round"/>
+
+  <!-- Flukes (left) -->
+  <path d="M 172 332 L 150 356 L 186 362 Z" fill="#D4B483"/>
+  <!-- Flukes (right) -->
+  <path d="M 340 332 L 362 356 L 326 362 Z" fill="#D4B483"/>
+
+  <!-- Bottom shaft cap -->
+  <circle cx="256" cy="369" r="13" fill="#D4B483"/>
+
+  <!-- "MV" monogram subtle hint below stock -->
+  <text x="256" y="305" font-family="Georgia, serif" font-size="48" font-weight="700" fill="#1A6B72" text-anchor="middle" opacity="0.7">MV</text>
+</svg>

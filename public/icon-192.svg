@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="40" fill="#0c2340"/>
+  <ellipse cx="96" cy="154" rx="41" ry="5" fill="#1A6B72" opacity="0.35"/>
+
+  <!-- Ring -->
+  <circle cx="96" cy="42" r="14" fill="none" stroke="#D4B483" stroke-width="8"/>
+  <!-- Shaft -->
+  <rect x="92" y="56" width="8" height="83" rx="4" fill="#D4B483"/>
+  <!-- Stock -->
+  <rect x="57" y="68" width="78" height="8" rx="4" fill="#D4B483"/>
+  <circle cx="57" cy="72" r="5" fill="#D4B483"/>
+  <circle cx="135" cy="72" r="5" fill="#D4B483"/>
+  <!-- Arms -->
+  <path d="M 96 139 C 90 139 74 135 64 125" fill="none" stroke="#D4B483" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 96 139 C 102 139 118 135 128 125" fill="none" stroke="#D4B483" stroke-width="8" stroke-linecap="round"/>
+  <!-- Flukes -->
+  <path d="M 64 125 L 56 134 L 70 136 Z" fill="#D4B483"/>
+  <path d="M 128 125 L 136 134 L 122 136 Z" fill="#D4B483"/>
+  <circle cx="96" cy="139" r="5" fill="#D4B483"/>
+  <!-- MV -->
+  <text x="96" y="117" font-family="Georgia, serif" font-size="18" font-weight="700" fill="#1A6B72" text-anchor="middle" opacity="0.7">MV</text>
+</svg>
