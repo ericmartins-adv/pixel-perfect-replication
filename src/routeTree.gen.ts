@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SociosRouteImport } from './routes/socios'
+import { Route as MinhaPosicaoRouteImport } from './routes/minha-posicao'
 import { Route as LancamentosRouteImport } from './routes/lancamentos'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,6 +18,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const SociosRoute = SociosRouteImport.update({
   id: '/socios',
   path: '/socios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MinhaPosicaoRoute = MinhaPosicaoRouteImport.update({
+  id: '/minha-posicao',
+  path: '/minha-posicao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LancamentosRoute = LancamentosRouteImport.update({
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/lancamentos': typeof LancamentosRoute
+  '/minha-posicao': typeof MinhaPosicaoRoute
   '/socios': typeof SociosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/lancamentos': typeof LancamentosRoute
+  '/minha-posicao': typeof MinhaPosicaoRoute
   '/socios': typeof SociosRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,28 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/lancamentos': typeof LancamentosRoute
+  '/minha-posicao': typeof MinhaPosicaoRoute
   '/socios': typeof SociosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/lancamentos' | '/socios'
+  fullPaths: '/' | '/dashboard' | '/lancamentos' | '/minha-posicao' | '/socios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/lancamentos' | '/socios'
-  id: '__root__' | '/' | '/dashboard' | '/lancamentos' | '/socios'
+  to: '/' | '/dashboard' | '/lancamentos' | '/minha-posicao' | '/socios'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/lancamentos'
+    | '/minha-posicao'
+    | '/socios'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LancamentosRoute: typeof LancamentosRoute
+  MinhaPosicaoRoute: typeof MinhaPosicaoRoute
   SociosRoute: typeof SociosRoute
 }
 
@@ -76,6 +92,13 @@ declare module '@tanstack/react-router' {
       path: '/socios'
       fullPath: '/socios'
       preLoaderRoute: typeof SociosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/minha-posicao': {
+      id: '/minha-posicao'
+      path: '/minha-posicao'
+      fullPath: '/minha-posicao'
+      preLoaderRoute: typeof MinhaPosicaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lancamentos': {
@@ -106,8 +129,19 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LancamentosRoute: LancamentosRoute,
+  MinhaPosicaoRoute: MinhaPosicaoRoute,
   SociosRoute: SociosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
