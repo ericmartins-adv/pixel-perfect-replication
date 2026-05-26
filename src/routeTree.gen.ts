@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SociosRouteImport } from './routes/socios'
+import { Route as ObraRouteImport } from './routes/obra'
 import { Route as MinhaPosicaoRouteImport } from './routes/minha-posicao'
 import { Route as LancamentosRouteImport } from './routes/lancamentos'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -18,6 +19,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const SociosRoute = SociosRouteImport.update({
   id: '/socios',
   path: '/socios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObraRoute = ObraRouteImport.update({
+  id: '/obra',
+  path: '/obra',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MinhaPosicaoRoute = MinhaPosicaoRouteImport.update({
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/lancamentos': typeof LancamentosRoute
   '/minha-posicao': typeof MinhaPosicaoRoute
+  '/obra': typeof ObraRoute
   '/socios': typeof SociosRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/lancamentos': typeof LancamentosRoute
   '/minha-posicao': typeof MinhaPosicaoRoute
+  '/obra': typeof ObraRoute
   '/socios': typeof SociosRoute
 }
 export interface FileRoutesById {
@@ -61,19 +69,33 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/lancamentos': typeof LancamentosRoute
   '/minha-posicao': typeof MinhaPosicaoRoute
+  '/obra': typeof ObraRoute
   '/socios': typeof SociosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/lancamentos' | '/minha-posicao' | '/socios'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/lancamentos'
+    | '/minha-posicao'
+    | '/obra'
+    | '/socios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/lancamentos' | '/minha-posicao' | '/socios'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/lancamentos'
+    | '/minha-posicao'
+    | '/obra'
+    | '/socios'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
     | '/lancamentos'
     | '/minha-posicao'
+    | '/obra'
     | '/socios'
   fileRoutesById: FileRoutesById
 }
@@ -82,6 +104,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   LancamentosRoute: typeof LancamentosRoute
   MinhaPosicaoRoute: typeof MinhaPosicaoRoute
+  ObraRoute: typeof ObraRoute
   SociosRoute: typeof SociosRoute
 }
 
@@ -92,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/socios'
       fullPath: '/socios'
       preLoaderRoute: typeof SociosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/obra': {
+      id: '/obra'
+      path: '/obra'
+      fullPath: '/obra'
+      preLoaderRoute: typeof ObraRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/minha-posicao': {
@@ -130,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   LancamentosRoute: LancamentosRoute,
   MinhaPosicaoRoute: MinhaPosicaoRoute,
+  ObraRoute: ObraRoute,
   SociosRoute: SociosRoute,
 }
 export const routeTree = rootRouteImport
