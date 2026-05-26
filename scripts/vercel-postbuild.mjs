@@ -3,9 +3,9 @@
  * formato Vercel Build Output API (.vercel/output/).
  *
  * Estrutura gerada:
- *   .vercel/output/static/      ← assets do cliente (JS, CSS, SVG…)
- *   .vercel/output/functions/ssr.func/  ← função SSR Node.js
- *   .vercel/output/config.json  ← regras de roteamento
+ *   .vercel/output/static/              ← assets do cliente (JS, CSS, SVG…)
+ *   .vercel/output/functions/ssr.func/  ← função SSR Node.js 20
+ *   .vercel/output/config.json          ← regras de roteamento
  */
 
 import { cpSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'fs'
@@ -29,74 +29,77 @@ const funcDir = resolve(root, '.vercel/output/functions/ssr.func')
 mkdirSync(funcDir, { recursive: true })
 
 // Copia o servidor Node.js inteiro para dentro do pacote da função
-cpSync(resolve(root, 'dist/server'), resolve(root, funcDir, 'dist/server'), { recursive: true })
+cpSync(resolve(root, 'dist/server'), resolve(funcDir, 'dist/server'), { recursive: true })
 console.log('✓ Servidor copiado para o pacote da função')
 
-// Handler da função — tenta fetch-API primeiro, cai para Node handler
+// Handler da função — TanStack Start exporta um handler Fetch API como default export
+// A função é: (request: Request) => Promise<Response>
 const handlerCode = `
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-let _app = null
-async function getApp() {
-  if (!_app) {
+let _handler = null
+async function getHandler() {
+  if (!_handler) {
     const mod = await import(join(__dirname, 'dist/server/server.js'))
-    _app = mod.default ?? mod
+    // TanStack Start exporta a função handler como default
+    // Pode ser: mod.default, mod.default.fetch, ou mod.fetch
+    const exp = mod.default ?? mod
+    if (typeof exp?.fetch === 'function') {
+      // Objeto com método fetch (ex: Hono, H3 wrapped)
+      _handler = (req) => exp.fetch(req)
+    } else if (typeof exp === 'function') {
+      // Função direta (request: Request) => Response — padrão TanStack Start
+      _handler = exp
+    } else {
+      throw new Error('Formato de handler SSR não reconhecido: ' + typeof exp)
+    }
   }
-  return _app
+  return _handler
 }
 
 export default async function handler(req, res) {
   try {
-    const app = await getApp()
+    const fetchHandler = await getHandler()
 
-    // ── Fetch-compatible handler (TanStack Start / H3 / Vinxi) ──────────────
-    if (typeof app?.fetch === 'function') {
-      const proto = req.headers['x-forwarded-proto'] || 'https'
-      const host  = req.headers['x-forwarded-host']  || req.headers.host || 'localhost'
-      const url   = new URL(req.url ?? '/', \`\${proto}://\${host}\`)
+    // Converte Node.js IncomingMessage → Fetch Request
+    const proto = req.headers['x-forwarded-proto'] || 'https'
+    const host  = req.headers['x-forwarded-host'] || req.headers.host || 'localhost'
+    const url   = new URL(req.url ?? '/', \`\${proto}://\${host}\`)
 
-      const headers = new Headers()
-      for (const [k, v] of Object.entries(req.headers ?? {})) {
-        if (Array.isArray(v)) v.forEach(x => headers.append(k, x))
-        else if (v != null) headers.set(k, String(v))
-      }
-
-      let body
-      if (req.method && !['GET', 'HEAD'].includes(req.method.toUpperCase())) {
-        const chunks = []
-        for await (const chunk of req) chunks.push(chunk)
-        if (chunks.length) body = Buffer.concat(chunks)
-      }
-
-      const request = new Request(url.toString(), {
-        method: req.method ?? 'GET',
-        headers,
-        body: body ?? undefined,
-        duplex: body ? 'half' : undefined,
-      })
-
-      const response = await app.fetch(request)
-      res.statusCode = response.status
-      response.headers.forEach((v, k) => res.setHeader(k, v))
-      res.end(Buffer.from(await response.arrayBuffer()))
-      return
+    const headers = new Headers()
+    for (const [k, v] of Object.entries(req.headers ?? {})) {
+      if (Array.isArray(v)) v.forEach(x => headers.append(k, x))
+      else if (v != null) headers.set(k, String(v))
     }
 
-    // ── Node http.RequestListener ────────────────────────────────────────────
-    if (typeof app === 'function') {
-      await app(req, res)
-      return
+    let body
+    if (req.method && !['GET', 'HEAD'].includes(req.method.toUpperCase())) {
+      const chunks = []
+      for await (const chunk of req) chunks.push(chunk)
+      if (chunks.length) body = Buffer.concat(chunks)
     }
 
-    res.statusCode = 500
-    res.end('SSR handler not found')
+    const fetchRequest = new Request(url.toString(), {
+      method: req.method ?? 'GET',
+      headers,
+      body: body ?? null,
+      duplex: body ? 'half' : undefined,
+    })
+
+    // Chama o handler Fetch API do TanStack Start
+    const response = await fetchHandler(fetchRequest)
+
+    res.statusCode = response.status
+    response.headers.forEach((v, k) => res.setHeader(k, v))
+    const buf = Buffer.from(await response.arrayBuffer())
+    res.end(buf)
   } catch (e) {
-    console.error('[SSR]', e)
+    console.error('[SSR Error]', e)
     res.statusCode = 500
-    res.end('Internal Server Error')
+    res.end('Internal Server Error: ' + e.message)
   }
 }
 `.trimStart()
