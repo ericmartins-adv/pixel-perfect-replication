@@ -7,11 +7,12 @@ import {
   formatBRL,
   getSocio,
   CATEGORIAS,
+  progressoGeral,
 } from "@/lib/manso-store";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
 } from "recharts";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, Target } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, Target, CalendarClock, Flag } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
@@ -25,6 +26,7 @@ function Dashboard() {
   const router = useRouter();
   const sessao = useMansoStore((s) => s.sessao);
   const lancamentos = useMansoStore((s) => s.lancamentos);
+  const fases = useMansoStore((s) => s.fases);
 
   useEffect(() => {
     if (!sessao) router.navigate({ to: "/" });
@@ -35,6 +37,20 @@ function Dashboard() {
   const totalAportado = saldos.reduce((s, x) => s + x.aportado, 0);
   const totalGasto = lancamentos.filter((l) => l.tipo === "despesa").reduce((s, l) => s + l.valor, 0);
   const progresso = Math.min(100, (totalAportado / META_OBRA) * 100);
+  const progressoObra = useMemo(() => progressoGeral(fases), [fases]);
+
+  // Próximo marco: primeira tarefa com dataPrevista futura não concluída
+  const proximoMarco = useMemo(() => {
+    const hoje = new Date().toISOString().slice(0, 10);
+    for (const f of fases) {
+      for (const t of f.tarefas) {
+        if (!t.concluida && t.dataPrevista && t.dataPrevista >= hoje) {
+          return { fase: f.titulo, tarefa: t.titulo, data: t.dataPrevista };
+        }
+      }
+    }
+    return null;
+  }, [fases]);
 
   const porCategoria = useMemo(() => {
     const map = new Map<string, number>();
@@ -112,6 +128,43 @@ function Dashboard() {
           icon={Target}
           accent="var(--gold)"
         />
+      </div>
+
+      {/* Próxima despesa + Próximo marco */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="bg-card border border-border rounded-xl p-5 flex items-start gap-4">
+          <div className="size-9 rounded-full bg-[var(--gold)]/15 flex items-center justify-center shrink-0">
+            <CalendarClock className="size-4 text-[var(--gold)]" />
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Próxima despesa prevista</p>
+            <p className="font-medium mt-1">Taxa de Condomínio</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Vence no início do próximo mês · {formatBRL(890)}
+            </p>
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-5 flex items-start gap-4">
+          <div className="size-9 rounded-full bg-[var(--mist)]/15 flex items-center justify-center shrink-0">
+            <Flag className="size-4 text-[var(--mist)]" />
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Progresso da obra</p>
+            {proximoMarco ? (
+              <>
+                <p className="font-medium mt-1">{proximoMarco.tarefa}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {proximoMarco.fase} · {new Date(proximoMarco.data + "T12:00:00").toLocaleDateString("pt-BR")}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-medium mt-1">{progressoObra.toFixed(0)}% concluído</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Sem marcos com data definida</p>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Progresso */}

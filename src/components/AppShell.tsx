@@ -3,13 +3,14 @@ import { useClientMounted } from "@/hooks/use-client-mounted";
 import { actions, getSocio, useMansoStore } from "@/lib/manso-store";
 import {
   Anchor, LogOut, LayoutDashboard, Receipt, Users, Hammer,
-  Target, FileText, Vote, BarChart3, Bell, User,
+  Target, FileText, Vote, BarChart3, Bell, User, Upload,
 } from "lucide-react";
 
 const NAV = [
   { to: "/dashboard", label: "Painel", icon: LayoutDashboard },
   { to: "/minha-posicao", label: "Minha posição", icon: User },
   { to: "/lancamentos", label: "Lançamentos", icon: Receipt },
+  { to: "/importar", label: "Importar extrato", icon: Upload },
   { to: "/obra", label: "Plano de obra", icon: Hammer },
   { to: "/orcamento", label: "Orçamento", icon: Target },
   { to: "/documentos", label: "Documentos", icon: FileText },

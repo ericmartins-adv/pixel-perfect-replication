@@ -2,7 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import { useMansoStore, calcularSaldos, formatBRL, SOCIOS, CATEGORIAS } from "@/lib/manso-store";
 import { useClientMounted } from "@/hooks/use-client-mounted";
-import { Download, FileSpreadsheet } from "lucide-react";
+import { Download, FileSpreadsheet, Printer } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { toast } from "sonner";
 
@@ -43,6 +43,57 @@ function Relatorios() {
 
   if (!sessao) return null;
 
+  const imprimirPDF = () => {
+    const dataStr = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+    const totalAport = saldos.reduce((s, x) => s + x.aportado, 0);
+    const cotaId = totalAport / 3;
+    const linhasEq = saldos.map((s) => {
+      const diff = s.aportado - cotaId;
+      return `<tr>
+        <td>${s.socio.nome.split(" ")[0]} ${s.socio.nome.split(" ").slice(-1)}</td>
+        <td class="num">${formatBRL(s.aportado)}</td>
+        <td class="num">${formatBRL(cotaId)}</td>
+        <td class="num" style="color:${diff > 50 ? "#1a6b72" : diff < -50 ? "#c4654a" : "#888"}">${diff >= 0 ? "+" : ""}${formatBRL(diff)}</td>
+        <td class="num">${diff < 0 ? formatBRL(Math.abs(diff)) : "—"}</td>
+      </tr>`;
+    }).join("");
+    const linhasDRE = dre.map((d) => `<tr>
+      <td>${d.categoria}</td>
+      <td class="num">${d.receita ? formatBRL(d.receita) : "—"}</td>
+      <td class="num">${d.despesa ? formatBRL(d.despesa) : "—"}</td>
+      <td class="num" style="color:${d.saldo >= 0 ? "#1a6b72" : "#c4654a"}">${d.saldo >= 0 ? "+" : ""}${formatBRL(d.saldo)}</td>
+    </tr>`).join("");
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+    <title>Relatório Manso Villa — ${dataStr}</title>
+    <style>
+      body { font-family: Georgia, serif; color: #1a1a1a; margin: 40px; font-size: 13px; }
+      h1 { font-size: 24px; margin-bottom: 4px; }
+      h2 { font-size: 16px; margin: 28px 0 10px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+      .sub { color: #666; font-size: 11px; margin-bottom: 24px; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+      th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #888; padding: 6px 8px; border-bottom: 2px solid #ddd; }
+      td { padding: 6px 8px; border-bottom: 1px solid #eee; }
+      .num { text-align: right; font-variant-numeric: tabular-nums; }
+      @media print { body { margin: 20px; } }
+    </style></head><body>
+    <h1>Manso Villa — Relatório Financeiro</h1>
+    <p class="sub">Condomínio Porto do Manso Vila Náutica · Chapada dos Guimarães - MT · Gerado em ${dataStr}</p>
+    <h2>Equalização entre sócios</h2>
+    <table><thead><tr><th>Sócio</th><th class="num">Aportado</th><th class="num">Cota ideal</th><th class="num">Diferença</th><th class="num">Aporte sugerido</th></tr></thead>
+    <tbody>${linhasEq}</tbody></table>
+    <h2>DRE por categoria</h2>
+    <table><thead><tr><th>Categoria</th><th class="num">Receitas</th><th class="num">Despesas</th><th class="num">Saldo</th></tr></thead>
+    <tbody>${linhasDRE}</tbody></table>
+    </body></html>`;
+    const win = window.open("", "_blank");
+    if (!win) { toast.error("Popup bloqueado — permita popups para este site."); return; }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 400);
+    toast.success("Relatório aberto para impressão/PDF");
+  };
+
   const exportarCSV = () => {
     const linhas = [["Data", "Tipo", "Descrição", "Categoria", "Responsável", "Valor"].join(",")];
     for (const l of lancamentos) {
@@ -67,9 +118,14 @@ function Relatorios() {
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Análises</p>
           <h1 className="font-serif text-4xl mt-2">Relatórios</h1>
         </div>
-        <button onClick={exportarCSV} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md border border-border text-sm hover:bg-muted">
-          <Download className="size-4" /> Exportar CSV
-        </button>
+        <div className="flex gap-2">
+          <button onClick={imprimirPDF} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md border border-border text-sm hover:bg-muted">
+            <Printer className="size-4" /> Exportar PDF
+          </button>
+          <button onClick={exportarCSV} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md border border-border text-sm hover:bg-muted">
+            <Download className="size-4" /> Exportar CSV
+          </button>
+        </div>
       </header>
 
       {/* Comparativo sócios */}

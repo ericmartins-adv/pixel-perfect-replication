@@ -2,7 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMansoStore, actions, SOCIOS, getSocio, formatBRL, type SocioId, type VotoStatus } from "@/lib/manso-store";
 import { useClientMounted } from "@/hooks/use-client-mounted";
-import { Plus, Check, X, Clock, FileSignature, Vote as VoteIcon } from "lucide-react";
+import { Plus, Check, X, Clock, FileSignature, Vote as VoteIcon, Printer } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/reunioes")({
@@ -129,11 +129,47 @@ function Reunioes() {
       ) : (
         <div className="space-y-4">
           {reunioes.length === 0 && <Empty texto="Nenhuma reunião registrada ainda." />}
-          {reunioes.map((r) => (
+          {reunioes.map((r) => {
+            const imprimirAta = () => {
+              const dataFmt = new Date(r.data).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+              const participantesNomes = r.participantes.map((id) => SOCIOS.find((s) => s.id === id)?.nome ?? id).join(", ");
+              const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+              <title>Ata — ${r.titulo}</title>
+              <style>
+                body { font-family: Georgia, serif; color: #1a1a1a; margin: 60px; font-size: 14px; line-height: 1.7; }
+                h1 { font-size: 22px; border-bottom: 2px solid #1a6b72; padding-bottom: 8px; margin-bottom: 4px; }
+                .meta { color: #666; font-size: 12px; margin-bottom: 32px; }
+                h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .1em; color: #888; margin: 28px 0 8px; }
+                .assinaturas { margin-top: 60px; display: flex; gap: 40px; }
+                .assin { flex: 1; border-top: 1px solid #ccc; padding-top: 8px; font-size: 12px; color: #666; }
+                @media print { body { margin: 30px; } }
+              </style></head><body>
+              <h1>${r.titulo}</h1>
+              <p class="meta">${dataFmt} · Participantes: ${participantesNomes}</p>
+              <h2>Pauta</h2><p>${r.pauta.replace(/\n/g, "<br>")}</p>
+              <h2>Deliberações</h2><p>${r.deliberacoes.replace(/\n/g, "<br>")}</p>
+              <div class="assinaturas">${r.participantes.map((id) => {
+                const s = SOCIOS.find((x) => x.id === id);
+                return `<div class="assin">${s?.nome ?? id}<br>Sócio Fundador — 33,33%</div>`;
+              }).join("")}</div>
+              </body></html>`;
+              const win = window.open("", "_blank");
+              if (!win) return;
+              win.document.write(html);
+              win.document.close();
+              win.focus();
+              setTimeout(() => win.print(), 400);
+            };
+            return (
             <article key={r.id} className="bg-card border border-border rounded-xl p-6">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                <FileSignature className="size-3.5" />
-                {new Date(r.data).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
+              <div className="flex items-start justify-between gap-4 mb-1">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <FileSignature className="size-3.5" />
+                  {new Date(r.data).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
+                </div>
+                <button onClick={imprimirAta} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded px-2.5 py-1 hover:bg-muted">
+                  <Printer className="size-3.5" /> Imprimir ata
+                </button>
               </div>
               <h3 className="font-serif text-xl">{r.titulo}</h3>
               <div className="flex gap-1 mt-2">
@@ -153,7 +189,8 @@ function Reunioes() {
                 </div>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
 
