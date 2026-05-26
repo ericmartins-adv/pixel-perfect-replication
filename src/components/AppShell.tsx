@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { useHydrated } from "@tanstack/react-router";
+import { useClientMounted } from "@/hooks/use-client-mounted";
 import { actions, getSocio, useMansoStore } from "@/lib/manso-store";
 import {
   Anchor, LogOut, LayoutDashboard, Receipt, Users, Hammer,
