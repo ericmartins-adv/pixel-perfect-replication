@@ -30,10 +30,9 @@ begin
     when 'michael@mansovilla.app' then 'michael'
     when 'heryk@mansovilla.app'   then 'heryk'
     -- E-mails pessoais dos sócios (Google OAuth ou cadastro manual)
-    when 'ericfsmartins@gmail.com' then 'eric'
-    -- Adicione abaixo os e-mails pessoais de Michael e Heryk:
-    -- when 'email.do.michael@gmail.com' then 'michael'
-    -- when 'email.do.heryk@gmail.com'   then 'heryk'
+    when 'ericfsmartins@gmail.com'  then 'eric'
+    when 'michael.kazuo@gmail.com'  then 'michael'
+    when 'herykdedeus@outlook.com'  then 'heryk'
     else null
   end;
 
@@ -45,7 +44,10 @@ begin
 
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
+
+-- Restringe execução para evitar escalada de privilégios (SECURITY DEFINER)
+revoke execute on function handle_new_user() from public, anon, authenticated;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
@@ -159,6 +161,14 @@ create policy "auth_config" on configuracoes for all using (auth.role() = 'authe
 -- ═══════════════════════════════════════════════
 -- SEED
 -- ═══════════════════════════════════════════════
+
+-- Profiles: execute AFTER creating users in Supabase Auth Dashboard.
+-- Substitua os UUIDs pelos IDs reais de cada sócio (auth.users.id).
+-- insert into profiles (id, socio_id) values
+--   ('<uuid-eric>',    'eric'),
+--   ('<uuid-michael>', 'michael'),
+--   ('<uuid-heryk>',   'heryk')
+-- on conflict (id) do nothing;
 
 insert into configuracoes (id) values (1) on conflict (id) do nothing;
 
