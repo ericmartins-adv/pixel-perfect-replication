@@ -425,8 +425,9 @@ export const actions = {
   async login(email: string, senha: string): Promise<Socio | null> {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
     if (error || !data.user) return null;
-    const socio = SOCIOS.find((s) => s.email.toLowerCase() === email.toLowerCase());
-    return socio ?? null;
+    const socioId = await resolverSocio(data.user);
+    if (!socioId) return null;
+    return SOCIOS.find((s) => s.id === socioId) ?? null;
   },
 
   async loginGoogle(): Promise<void> {
@@ -441,28 +442,42 @@ export const actions = {
   },
 
   // Lançamentos
-  addLancamento(l: Omit<Lancamento, "id" | "criadoEm">) {
+  async addLancamento(l: Omit<Lancamento, "id" | "criadoEm">) {
     const novo: Lancamento = { ...l, id: uid(), criadoEm: new Date().toISOString() };
     state = { ...state, lancamentos: [novo, ...state.lancamentos] };
     persist();
     notify();
-    supabase.from("lancamentos").insert({
+    const { error } = await supabase.from("lancamentos").insert({
       id: novo.id, data: novo.data, tipo: novo.tipo, descricao: novo.descricao,
       categoria: novo.categoria, valor: novo.valor, responsavel: novo.responsavel,
       rateio: novo.rateio, criado_por: novo.criadoPor, criado_em: novo.criadoEm,
       fase_id: novo.faseId ?? null,
-    }).then(({ error }) => { if (error) console.error("[Supabase] addLancamento:", error); });
+    });
+    if (error) {
+      console.error("[Supabase] addLancamento:", error);
+      state = { ...state, lancamentos: state.lancamentos.filter((x) => x.id !== novo.id) };
+      persist();
+      notify();
+      throw new Error(error.message);
+    }
   },
 
-  removeLancamento(id: string) {
+  async removeLancamento(id: string) {
+    const backup = state.lancamentos;
     state = { ...state, lancamentos: state.lancamentos.filter((x) => x.id !== id) };
     persist();
     notify();
-    supabase.from("lancamentos").delete().eq("id", id)
-      .then(({ error }) => { if (error) console.error("[Supabase] removeLancamento:", error); });
+    const { error } = await supabase.from("lancamentos").delete().eq("id", id);
+    if (error) {
+      console.error("[Supabase] removeLancamento:", error);
+      state = { ...state, lancamentos: backup };
+      persist();
+      notify();
+      throw new Error(error.message);
+    }
   },
 
-  addLancamentosBulk(arr: Omit<Lancamento, "id" | "criadoEm">[]) {
+  async addLancamentosBulk(arr: Omit<Lancamento, "id" | "criadoEm">[]) {
     const novos = arr.map((l) => ({ ...l, id: uid(), criadoEm: new Date().toISOString() }));
     state = { ...state, lancamentos: [...novos, ...state.lancamentos] };
     persist();
@@ -473,8 +488,15 @@ export const actions = {
       rateio: novo.rateio, criado_por: novo.criadoPor, criado_em: novo.criadoEm,
       fase_id: novo.faseId ?? null,
     }));
-    supabase.from("lancamentos").insert(rows)
-      .then(({ error }) => { if (error) console.error("[Supabase] addLancamentosBulk:", error); });
+    const { error } = await supabase.from("lancamentos").insert(rows);
+    if (error) {
+      console.error("[Supabase] addLancamentosBulk:", error);
+      const ids = new Set(novos.map((n) => n.id));
+      state = { ...state, lancamentos: state.lancamentos.filter((x) => !ids.has(x.id)) };
+      persist();
+      notify();
+      throw new Error(error.message);
+    }
   },
 
   // Tarefas
@@ -524,25 +546,39 @@ export const actions = {
   },
 
   // Documentos
-  addDocumento(d: Omit<Documento, "id" | "uploadEm">) {
+  async addDocumento(d: Omit<Documento, "id" | "uploadEm">) {
     const novo: Documento = { ...d, id: uid(), uploadEm: new Date().toISOString() };
     state = { ...state, documentos: [novo, ...state.documentos] };
     persist();
     notify();
-    supabase.from("documentos").insert({
+    const { error } = await supabase.from("documentos").insert({
       id: novo.id, nome: novo.nome, categoria: novo.categoria,
       tamanho_kb: novo.tamanhoKb, upload_em: novo.uploadEm,
       upload_por: novo.uploadPor, validade_em: novo.validadeEm ?? null,
       tags: novo.tags, notas: novo.notas ?? null,
-    }).then(({ error }) => { if (error) console.error("[Supabase] addDocumento:", error); });
+    });
+    if (error) {
+      console.error("[Supabase] addDocumento:", error);
+      state = { ...state, documentos: state.documentos.filter((x) => x.id !== novo.id) };
+      persist();
+      notify();
+      throw new Error(error.message);
+    }
   },
 
-  removeDocumento(id: string) {
+  async removeDocumento(id: string) {
+    const backup = state.documentos;
     state = { ...state, documentos: state.documentos.filter((d) => d.id !== id) };
     persist();
     notify();
-    supabase.from("documentos").delete().eq("id", id)
-      .then(({ error }) => { if (error) console.error("[Supabase] removeDocumento:", error); });
+    const { error } = await supabase.from("documentos").delete().eq("id", id);
+    if (error) {
+      console.error("[Supabase] removeDocumento:", error);
+      state = { ...state, documentos: backup };
+      persist();
+      notify();
+      throw new Error(error.message);
+    }
   },
 
   // Votações
@@ -576,8 +612,9 @@ export const actions = {
     };
     persist();
     notify();
-    if (updatedVotacao) {
-      supabase.from("votacoes").update({ votos: updatedVotacao.votos, decisao: updatedVotacao.decisao }).eq("id", votacaoId)
+    const updated = updatedVotacao as Votacao | null;
+    if (updated) {
+      supabase.from("votacoes").update({ votos: updated.votos, decisao: updated.decisao }).eq("id", votacaoId)
         .then(({ error }) => { if (error) console.error("[Supabase] votar:", error); });
     }
   },

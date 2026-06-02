@@ -74,47 +74,42 @@ function Importar() {
 
   const pendentes = txs.filter((t) => !t.pular && (t.tipo === "credito" ? !t.socioAporte : !t.categoria));
 
-  const confirmarImportacao = () => {
+  const confirmarImportacao = async () => {
     if (pendentes.length > 0) {
       toast.error(`${pendentes.length} transação(ões) ainda sem classificação.`);
       return;
     }
     setImportando(true);
-    let count = 0;
+    const itens: Omit<import("@/lib/manso-store").Lancamento, "id" | "criadoEm">[] = [];
     for (const tx of txs) {
       if (tx.pular) continue;
       if (tx.tipo === "credito") {
         const sid = tx.socioAporte!;
-        actions.addLancamento({
-          data: tx.data,
-          tipo: "receita",
-          descricao: tx.descricao,
-          categoria: "Aporte",
-          valor: tx.valor,
-          responsavel: sid,
+        itens.push({
+          data: tx.data, tipo: "receita", descricao: tx.descricao, categoria: "Aporte",
+          valor: tx.valor, responsavel: sid,
           rateio: { eric: sid === "eric" ? tx.valor : 0, michael: sid === "michael" ? tx.valor : 0, heryk: sid === "heryk" ? tx.valor : 0 },
-          criadoPor: sessao!,
-          faseId: undefined,
+          criadoPor: sessao!, faseId: undefined,
         });
       } else {
         const split = tx.valor / 3;
-        actions.addLancamento({
-          data: tx.data,
-          tipo: "despesa",
-          descricao: tx.descricao,
-          categoria: tx.categoria!,
-          valor: tx.valor,
-          responsavel: sessao!,
+        itens.push({
+          data: tx.data, tipo: "despesa", descricao: tx.descricao, categoria: tx.categoria!,
+          valor: tx.valor, responsavel: sessao!,
           rateio: { eric: split, michael: split, heryk: split },
-          criadoPor: sessao!,
-          faseId: undefined,
+          criadoPor: sessao!, faseId: undefined,
         });
       }
-      count++;
     }
-    toast.success(`${count} lançamento(s) importado(s) com sucesso!`);
-    router.navigate({ to: "/lancamentos" });
-    setImportando(false);
+    try {
+      await actions.addLancamentosBulk(itens);
+      toast.success(`${itens.length} lançamento(s) importado(s) com sucesso!`);
+      router.navigate({ to: "/lancamentos" });
+    } catch (err) {
+      toast.error("Erro ao salvar os lançamentos. Verifique sua conexão e tente novamente.");
+    } finally {
+      setImportando(false);
+    }
   };
 
   const resetar = () => {

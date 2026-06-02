@@ -73,7 +73,7 @@ function DocumentosPage() {
             const s = getSocio(d.uploadPor);
             return (
               <article key={d.id} className="bg-card border border-border rounded-xl p-5 group relative">
-                <button onClick={() => { actions.removeDocumento(d.id); toast.success("Documento removido"); }}
+                <button onClick={async () => { try { await actions.removeDocumento(d.id); toast.success("Documento removido"); } catch { toast.error("Erro ao remover documento."); } }}
                   className="absolute top-3 right-3 p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100">
                   <Trash2 className="size-3.5" />
                 </button>
@@ -116,19 +116,28 @@ function UploadModal({ sessao, onClose }: { sessao: string; onClose: () => void 
   const [tags, setTags] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
 
-  const submit = (e: React.FormEvent) => {
+  const [saving, setSaving] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const finalNome = nome.trim() || arquivo?.name || "documento.pdf";
-    actions.addDocumento({
-      nome: finalNome,
-      categoria,
-      tamanhoKb: arquivo ? Math.round(arquivo.size / 1024) : 0,
-      uploadPor: sessao as "eric",
-      validadeEm: validade || undefined,
-      tags: tags.split(",").map(t => t.trim()).filter(Boolean),
-    });
-    toast.success("Documento adicionado");
-    onClose();
+    setSaving(true);
+    try {
+      const finalNome = nome.trim() || arquivo?.name || "documento.pdf";
+      await actions.addDocumento({
+        nome: finalNome,
+        categoria,
+        tamanhoKb: arquivo ? Math.round(arquivo.size / 1024) : 0,
+        uploadPor: sessao as "eric",
+        validadeEm: validade || undefined,
+        tags: tags.split(",").map(t => t.trim()).filter(Boolean),
+      });
+      toast.success("Documento adicionado");
+      onClose();
+    } catch (err) {
+      toast.error("Erro ao salvar documento. Verifique sua conexão e tente novamente.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -173,7 +182,9 @@ function UploadModal({ sessao, onClose }: { sessao: string; onClose: () => void 
           </p>
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-md border border-border text-sm">Cancelar</button>
-            <button type="submit" className="flex-1 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium">Registrar</button>
+            <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60">
+              {saving ? "Salvando…" : "Registrar"}
+            </button>
           </div>
         </form>
       </div>

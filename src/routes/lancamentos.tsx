@@ -108,7 +108,7 @@ function Lancamentos() {
                   </td>
                   <td className="px-3">
                     <button
-                      onClick={() => { actions.removeLancamento(l.id); toast.success("Lançamento removido"); }}
+                      onClick={async () => { try { await actions.removeLancamento(l.id); toast.success("Lançamento removido"); } catch { toast.error("Erro ao remover lançamento."); } }}
                       className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       aria-label="Remover"
                     ><Trash2 className="size-3.5" /></button>
@@ -133,8 +133,9 @@ function NovoLancamentoModal({ currentUser, onClose }: { currentUser: SocioId; o
   const [valor, setValor] = useState("");
   const [responsavel, setResponsavel] = useState<SocioId>(currentUser);
   const [rateioModo, setRateioModo] = useState<"igual" | "individual">("igual");
+  const [saving, setSaving] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const v = parseFloat(valor.replace(",", "."));
     if (isNaN(v) || v <= 0) return toast.error("Informe um valor válido");
@@ -152,12 +153,19 @@ function NovoLancamentoModal({ currentUser, onClose }: { currentUser: SocioId; o
       rateio[responsavel] = v;
     }
 
-    actions.addLancamento({
-      data, tipo, descricao: descricao.trim(), categoria, valor: v, responsavel, rateio,
-      criadoPor: currentUser,
-    });
-    toast.success("Lançamento registrado");
-    onClose();
+    setSaving(true);
+    try {
+      await actions.addLancamento({
+        data, tipo, descricao: descricao.trim(), categoria, valor: v, responsavel, rateio,
+        criadoPor: currentUser,
+      });
+      toast.success("Lançamento registrado");
+      onClose();
+    } catch (err) {
+      toast.error("Erro ao salvar lançamento. Verifique sua conexão e tente novamente.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -231,9 +239,9 @@ function NovoLancamentoModal({ currentUser, onClose }: { currentUser: SocioId; o
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose}
               className="flex-1 py-2.5 rounded-md border border-border text-sm hover:bg-muted">Cancelar</button>
-            <button type="submit"
-              className="flex-1 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
-              Registrar
+            <button type="submit" disabled={saving}
+              className="flex-1 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60">
+              {saving ? "Salvando…" : "Registrar"}
             </button>
           </div>
         </form>
