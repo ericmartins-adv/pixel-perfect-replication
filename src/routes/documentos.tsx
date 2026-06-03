@@ -134,7 +134,7 @@ function UploadModal({ sessao, onClose }: { sessao: string; onClose: () => void 
       toast.success("Documento adicionado");
       onClose();
     } catch (err) {
-      toast.error("Erro ao salvar documento. Verifique sua conexão e tente novamente.");
+      toast.error(`Erro ao salvar: ${err instanceof Error ? err.message : "Tente novamente"}`);
     } finally {
       setSaving(false);
     }

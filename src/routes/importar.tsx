@@ -106,7 +106,7 @@ function Importar() {
       toast.success(`${itens.length} lançamento(s) importado(s) com sucesso!`);
       router.navigate({ to: "/lancamentos" });
     } catch (err) {
-      toast.error("Erro ao salvar os lançamentos. Verifique sua conexão e tente novamente.");
+      toast.error(`Erro ao salvar: ${err instanceof Error ? err.message : "Tente novamente"}`);
     } finally {
       setImportando(false);
     }

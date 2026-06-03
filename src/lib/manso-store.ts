@@ -308,14 +308,19 @@ export function useMansoStore<T>(selector: (s: State) => T): T {
 // ── Carga de dados do Supabase ───────────────────────────────────
 async function loadAllData() {
   try {
+    // Diagnóstico: verifica sessão antes de carregar
+    const { data: authData } = await supabase.auth.getSession();
+    const token = authData?.session?.access_token;
+    console.log("[Store] loadAllData — sessão:", token ? `✓ JWT válido (${authData.session?.user?.email})` : "✗ SEM SESSÃO AUTENTICADA");
+
     const [
-      { data: lancamentos },
-      { data: fases },
-      { data: tarefas },
-      { data: documentos },
-      { data: votacoes },
-      { data: reunioes },
-      { data: config },
+      { data: lancamentos, error: e1 },
+      { data: fases, error: e2 },
+      { data: tarefas, error: e3 },
+      { data: documentos, error: e4 },
+      { data: votacoes, error: e5 },
+      { data: reunioes, error: e6 },
+      { data: config, error: e7 },
     ] = await Promise.all([
       supabase.from("lancamentos").select("*").order("data", { ascending: false }),
       supabase.from("fases").select("*").order("ordem"),
@@ -325,6 +330,13 @@ async function loadAllData() {
       supabase.from("reunioes").select("*").order("data", { ascending: false }),
       supabase.from("configuracoes").select("*").eq("id", 1).single(),
     ]);
+
+    const erros = [e1, e2, e3, e4, e5, e6, e7].filter(Boolean);
+    if (erros.length > 0) {
+      console.error("[Store] Erros nas queries:", erros);
+    }
+
+    console.log("[Store] Dados carregados — lancamentos:", lancamentos?.length ?? 0, "| documentos:", documentos?.length ?? 0);
 
     const fasesComTarefas: FaseObra[] = (fases ?? []).map((f) => ({
       id: f.id,

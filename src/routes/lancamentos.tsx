@@ -162,7 +162,7 @@ function NovoLancamentoModal({ currentUser, onClose }: { currentUser: SocioId; o
       toast.success("Lançamento registrado");
       onClose();
     } catch (err) {
-      toast.error("Erro ao salvar lançamento. Verifique sua conexão e tente novamente.");
+      toast.error(`Erro ao salvar: ${err instanceof Error ? err.message : "Tente novamente"}`);
     } finally {
       setSaving(false);
     }
