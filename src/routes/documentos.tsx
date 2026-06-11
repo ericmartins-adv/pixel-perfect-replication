@@ -74,7 +74,7 @@ function DocumentosPage() {
             return (
               <article key={d.id} className="bg-card border border-border rounded-xl p-5 group relative">
                 <button onClick={async () => { try { await actions.removeDocumento(d.id); toast.success("Documento removido"); } catch { toast.error("Erro ao remover documento."); } }}
-                  className="absolute top-3 right-3 p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100">
+                  className="absolute top-3 right-3 p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                   <Trash2 className="size-3.5" />
                 </button>
                 <div className="size-10 rounded bg-secondary flex items-center justify-center mb-3">
