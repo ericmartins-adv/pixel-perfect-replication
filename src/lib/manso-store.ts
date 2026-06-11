@@ -366,17 +366,28 @@ async function loadAllData() {
   }
 }
 
-// ── Resolução de sócio a partir de sessão Supabase ───────────────
-// 1. Tenta match direto por email (emails @mansovilla.app)
-// 2. Se não encontrar, consulta tabela `profiles` (mapeia qualquer email/OAuth → sócio)
-async function resolverSocio(user: { id: string; email?: string | null }): Promise<SocioId | null> {
-  // Match direto por email
-  const porEmail = SOCIOS.find(
-    (s) => s.email.toLowerCase() === (user.email ?? "").toLowerCase()
-  );
-  if (porEmail) return porEmail.id;
+// ── Mapa canônico de emails reais → socio_id ─────────────────────
+// Inclui tanto os emails @mansovilla.app quanto os emails pessoais
+// dos sócios, para que o login funcione independente do profiles table.
+const EMAIL_SOCIO_MAP: Record<string, SocioId> = {
+  "eric@mansovilla.app":     "eric",
+  "michael@mansovilla.app":  "michael",
+  "heryk@mansovilla.app":    "heryk",
+  "ericfsmartins@gmail.com": "eric",
+  "michael.kazuo@gmail.com": "michael",
+  "herykdedeus@outlook.com": "heryk",
+};
 
-  // Consulta tabela profiles
+// ── Resolução de sócio a partir de sessão Supabase ───────────────
+// 1. Tenta match direto por email (mapa canônico)
+// 2. Se não encontrar, consulta tabela `profiles` (fallback para OAuth)
+async function resolverSocio(user: { id: string; email?: string | null }): Promise<SocioId | null> {
+  const email = (user.email ?? "").toLowerCase();
+
+  // Match direto por email
+  if (EMAIL_SOCIO_MAP[email]) return EMAIL_SOCIO_MAP[email];
+
+  // Fallback: consulta tabela profiles (Google OAuth, emails não mapeados)
   const { data } = await supabase
     .from("profiles")
     .select("socio_id")
