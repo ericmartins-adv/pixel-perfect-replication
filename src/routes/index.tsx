@@ -81,9 +81,9 @@ function LoginPage() {
       </div>
 
       {/* Direita — formulário */}
-      <div className="flex items-center justify-center p-8 bg-background">
+      <div className="flex items-center justify-center p-5 sm:p-8 bg-background">
         <div className="w-full max-w-sm">
-          <div className="lg:hidden flex items-center gap-2 mb-8">
+          <div className="lg:hidden flex items-center gap-2 mb-6 sm:mb-8">
             <Anchor className="size-5 text-[var(--lagoon)]" />
             <span className="font-serif text-2xl">Manso Villa</span>
           </div>

@@ -57,7 +57,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Manso Villa — Gestão do projeto" },
       { name: "description", content: "Plataforma de gestão financeira e de projeto da casa de veraneio Manso Villa, Porto do Manso Vila Náutica." },
       { property: "og:title", content: "Manso Villa — Gestão do projeto" },
