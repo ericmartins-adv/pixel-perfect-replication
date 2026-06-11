@@ -33,7 +33,7 @@ function MinhaPosicao() {
     .sort((a, b) => b.data.localeCompare(a.data));
 
   return (
-    <div className="p-8 lg:p-12 max-w-[1100px] mx-auto">
+    <div className="p-4 sm:p-8 lg:p-12 max-w-[1100px] mx-auto">
       <header className="mb-10">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{getSocio(sessao).nome}</p>
         <h1 className="font-serif text-4xl mt-2">Minha carteira no projeto</h1>
@@ -41,23 +41,25 @@ function MinhaPosicao() {
       </header>
 
       <section className="rounded-2xl overflow-hidden border border-border bg-card">
-        <div className="px-8 py-10 bg-deep-gradient text-white relative">
-          <div className="absolute top-6 right-6 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider"
+        <div className="px-6 py-8 sm:px-8 sm:py-10 bg-deep-gradient text-white relative flex flex-col gap-2">
+          <div className="sm:absolute sm:top-6 sm:right-6 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider w-fit"
             style={{ backgroundColor: "color-mix(in oklab, white 18%, transparent)" }}>
             {status}
           </div>
-          <p className="text-xs uppercase tracking-[0.2em] text-white/60">Saldo individual</p>
-          <p className="font-serif text-6xl mt-2 tabular-nums" style={{ color: diff >= 0 ? "var(--gold)" : "#ffb4a0" }}>
-            {diff >= 0 ? "+" : ""}{formatBRL(diff)}
-          </p>
-          <p className="text-white/70 mt-3 max-w-md text-sm">
-            {diff > 50 ? `Você está adiantado em ${formatBRL(diff)} frente à sua cota proporcional.` :
-             diff < -50 ? `Você precisa aportar ${formatBRL(Math.abs(diff))} para equilibrar.` :
-             "Sua contribuição está alinhada com os demais sócios."}
-          </p>
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-white/60">Saldo individual</p>
+            <p className="font-serif text-5xl sm:text-6xl mt-2 tabular-nums" style={{ color: diff >= 0 ? "var(--gold)" : "#ffb4a0" }}>
+              {diff >= 0 ? "+" : ""}{formatBRL(diff)}
+            </p>
+            <p className="text-white/70 mt-3 max-w-md text-sm">
+              {diff > 50 ? `Você está adiantado em ${formatBRL(diff)} frente à sua cota proporcional.` :
+               diff < -50 ? `Você precisa aportar ${formatBRL(Math.abs(diff))} para equilibrar.` :
+               "Sua contribuição está alinhada com os demais sócios."}
+            </p>
+          </div>
         </div>
 
-        <div className="grid sm:grid-cols-3 divide-x divide-border">
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
           <Stat icon={Wallet} label="Total aportado" value={formatBRL(eu.aportado)} />
           <Stat icon={Target} label="Cota proporcional" value={formatBRL(cotaIdeal)} />
           <Stat icon={diff >= 0 ? ArrowUpRight : ArrowDownRight} label="Próximo aporte sugerido" value={formatBRL(proxAporte)} accent={statusCor} />

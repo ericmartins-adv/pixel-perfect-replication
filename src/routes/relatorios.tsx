@@ -112,17 +112,17 @@ function Relatorios() {
   };
 
   return (
-    <div className="p-8 lg:p-12 max-w-[1200px] mx-auto">
-      <header className="flex items-end justify-between gap-4 mb-8">
+    <div className="p-4 sm:p-8 lg:p-12 max-w-[1200px] mx-auto">
+      <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Análises</p>
           <h1 className="font-serif text-4xl mt-2">Relatórios</h1>
         </div>
-        <div className="flex gap-2">
-          <button onClick={imprimirPDF} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md border border-border text-sm hover:bg-muted">
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button onClick={imprimirPDF} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md border border-border text-sm hover:bg-muted">
             <Printer className="size-4" /> Exportar PDF
           </button>
-          <button onClick={exportarCSV} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md border border-border text-sm hover:bg-muted">
+          <button onClick={exportarCSV} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md border border-border text-sm hover:bg-muted">
             <Download className="size-4" /> Exportar CSV
           </button>
         </div>
@@ -187,29 +187,31 @@ function Relatorios() {
           <FileSpreadsheet className="size-5 text-[var(--lagoon)]" />
           <h2 className="font-serif text-xl">DRE por categoria</h2>
         </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border">
-              <th className="py-2">Categoria</th>
-              <th className="py-2 text-right">Receitas</th>
-              <th className="py-2 text-right">Despesas</th>
-              <th className="py-2 text-right">Saldo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dre.map((d) => (
-              <tr key={d.categoria} className="border-b border-border last:border-0">
-                <td className="py-2.5">{d.categoria}</td>
-                <td className="text-right tabular-nums text-[var(--mist)]">{d.receita ? formatBRL(d.receita) : "—"}</td>
-                <td className="text-right tabular-nums">{d.despesa ? formatBRL(d.despesa) : "—"}</td>
-                <td className="text-right tabular-nums font-medium" style={{ color: d.saldo >= 0 ? "var(--mist)" : "#c4654a" }}>
-                  {d.saldo >= 0 ? "+" : ""}{formatBRL(d.saldo)}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border">
+                <th className="py-2">Categoria</th>
+                <th className="py-2 text-right">Receitas</th>
+                <th className="py-2 text-right">Despesas</th>
+                <th className="py-2 text-right">Saldo</th>
               </tr>
-            ))}
-            {dre.length === 0 && <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">Sem dados</td></tr>}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {dre.map((d) => (
+                <tr key={d.categoria} className="border-b border-border last:border-0">
+                  <td className="py-2.5">{d.categoria}</td>
+                  <td className="text-right tabular-nums text-[var(--mist)]">{d.receita ? formatBRL(d.receita) : "—"}</td>
+                  <td className="text-right tabular-nums">{d.despesa ? formatBRL(d.despesa) : "—"}</td>
+                  <td className="text-right tabular-nums font-medium" style={{ color: d.saldo >= 0 ? "var(--mist)" : "#c4654a" }}>
+                    {d.saldo >= 0 ? "+" : ""}{formatBRL(d.saldo)}
+                  </td>
+                </tr>
+              ))}
+              {dre.length === 0 && <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">Sem dados</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <p className="text-xs text-muted-foreground mt-6">

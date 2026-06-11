@@ -34,14 +34,14 @@ function DocumentosPage() {
   });
 
   return (
-    <div className="p-8 lg:p-12 max-w-[1200px] mx-auto">
-      <header className="flex items-end justify-between gap-4 mb-8">
+    <div className="p-4 sm:p-8 lg:p-12 max-w-[1200px] mx-auto">
+      <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Acervo do projeto</p>
           <h1 className="font-serif text-4xl mt-2">Documentos</h1>
           <p className="text-muted-foreground mt-1">Repositório de arquivos, contratos e licenças.</p>
         </div>
-        <button onClick={() => setOpen(true)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium">
+        <button onClick={() => setOpen(true)} className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium w-full sm:w-auto">
           <Upload className="size-4" /> Anexar documento
         </button>
       </header>

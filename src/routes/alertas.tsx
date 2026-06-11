@@ -101,7 +101,7 @@ function Alertas() {
     s === "critico" ? "#c4654a" : s === "atencao" ? "var(--gold)" : "var(--lagoon)";
 
   return (
-    <div className="p-8 lg:p-12 max-w-[900px] mx-auto">
+    <div className="p-4 sm:p-8 lg:p-12 max-w-[900px] mx-auto">
       <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Notificações</p>
         <h1 className="font-serif text-4xl mt-2">Alertas</h1>

@@ -30,8 +30,8 @@ function Lancamentos() {
   if (!sessao) return null;
 
   return (
-    <div className="p-8 lg:p-12 max-w-[1400px] mx-auto">
-      <header className="flex items-end justify-between gap-4 mb-8">
+    <div className="p-4 sm:p-8 lg:p-12 max-w-[1400px] mx-auto">
+      <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Financeiro</p>
           <h1 className="font-serif text-4xl mt-2">Lançamentos</h1>
@@ -39,7 +39,7 @@ function Lancamentos() {
         </div>
         <button
           onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 w-full sm:w-auto"
         >
           <Plus className="size-4" /> Novo lançamento
         </button>
@@ -59,7 +59,82 @@ function Lancamentos() {
         ))}
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Mobile Card List View */}
+      <div className="block md:hidden space-y-3">
+        {lista.length === 0 ? (
+          <div className="bg-card border border-border rounded-xl p-8 text-center text-sm text-muted-foreground">
+            Nenhum lançamento. Clique em "Novo lançamento" para começar.
+          </div>
+        ) : (
+          lista.map((l) => {
+            const s = getSocio(l.responsavel);
+            return (
+              <div key={l.id} className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2">
+                    <div className="mt-0.5 shrink-0">
+                      {l.tipo === "receita" ? (
+                        <ArrowUpRight className="size-4 text-[var(--mist)]" />
+                      ) : (
+                        <ArrowDownRight className="size-4 text-[#c4654a]" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm text-foreground">{l.descricao}</h4>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {new Date(l.data).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span
+                      className="text-sm font-semibold tabular-nums"
+                      style={{ color: l.tipo === "receita" ? "var(--mist)" : "var(--foreground)" }}
+                    >
+                      {l.tipo === "receita" ? "+" : "−"} {formatBRL(l.valor)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/60">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground font-medium">
+                      {l.categoria}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className="size-5 rounded-full flex items-center justify-center text-[9px] font-semibold text-white shrink-0"
+                        style={{ backgroundColor: s.cor }}
+                      >
+                        {s.iniciais}
+                      </div>
+                      <span className="text-xs text-muted-foreground">{s.nome.split(" ")[0]}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={async () => {
+                      try {
+                        await actions.removeLancamento(l.id);
+                        toast.success("Lançamento removido");
+                      } catch {
+                        toast.error("Erro ao remover lançamento.");
+                      }
+                    }}
+                    className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    aria-label="Remover"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-card border border-border rounded-xl overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-muted/30">
@@ -194,7 +269,7 @@ function NovoLancamentoModal({ currentUser, onClose }: { currentUser: SocioId; o
               className="w-full px-3 py-2 rounded-md border border-input bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40" />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Data">
               <input type="date" required value={data} onChange={(e) => setData(e.target.value)}
                 className="w-full px-3 py-2 rounded-md border border-input bg-card text-sm" />
@@ -206,7 +281,7 @@ function NovoLancamentoModal({ currentUser, onClose }: { currentUser: SocioId; o
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Categoria">
               <select value={categoria} onChange={(e) => setCategoria(e.target.value as Categoria)}
                 className="w-full px-3 py-2 rounded-md border border-input bg-card text-sm">

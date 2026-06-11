@@ -120,7 +120,7 @@ function Importar() {
   if (!sessao) return null;
 
   return (
-    <div className="p-8 lg:p-12 max-w-[960px] mx-auto">
+    <div className="p-4 sm:p-8 lg:p-12 max-w-[960px] mx-auto">
       <header className="mb-8">
         <Link to="/lancamentos" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-4">
           <ArrowLeft className="size-3" /> Voltar para lançamentos
@@ -138,7 +138,7 @@ function Importar() {
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           onClick={() => fileRef.current?.click()}
-          className="border-2 border-dashed border-border rounded-xl p-16 text-center cursor-pointer hover:border-[var(--lagoon)] hover:bg-muted/20 transition group"
+          className="border-2 border-dashed border-border rounded-xl p-8 sm:p-16 text-center cursor-pointer hover:border-[var(--lagoon)] hover:bg-muted/20 transition group"
         >
           <FileUp className="size-12 mx-auto text-muted-foreground group-hover:text-[var(--lagoon)] transition mb-4" />
           <p className="text-base font-medium mb-1">Arraste ou clique para selecionar</p>

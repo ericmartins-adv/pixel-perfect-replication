@@ -85,7 +85,7 @@ function Dashboard() {
   const meuSaldo = saldos.find((s) => s.socio.id === sessao)!;
 
   return (
-    <div className="p-8 lg:p-12 max-w-[1400px] mx-auto">
+    <div className="p-4 sm:p-8 lg:p-12 max-w-[1400px] mx-auto">
       <header className="mb-10">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
           {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}

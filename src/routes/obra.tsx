@@ -33,14 +33,14 @@ function ObraPage() {
   if (!sessao) return null;
 
   return (
-    <div className="p-8 lg:p-12 max-w-[1200px] mx-auto">
+    <div className="p-4 sm:p-8 lg:p-12 max-w-[1200px] mx-auto">
       <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Roadmap</p>
         <h1 className="font-serif text-4xl mt-2">Plano da construção</h1>
         <p className="text-muted-foreground mt-1">Da regularização documental ao mobiliário final.</p>
       </header>
 
-      <div className="grid md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <KPI label="Progresso geral" value={`${progresso.toFixed(1)}%`} />
         <KPI label="Total orçado nas fases" value={formatBRL(totalOrcado)} />
         <KPI label="Total realizado" value={formatBRL(totalRealizado)} accent="var(--mist)" />
@@ -49,13 +49,13 @@ function ObraPage() {
       {/* Gantt simplificado */}
       <section className="mb-8 bg-card border border-border rounded-xl p-6">
         <h2 className="font-serif text-xl mb-4">Linha do tempo</h2>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {fases.map((f) => {
             const p = progressoFase(f);
             return (
-              <div key={f.id} className="flex items-center gap-4">
-                <div className="w-32 text-xs text-muted-foreground shrink-0">{f.numero}. {f.titulo}</div>
-                <div className="flex-1 h-6 bg-muted rounded overflow-hidden relative">
+              <div key={f.id} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                <div className="w-full sm:w-32 text-xs text-muted-foreground shrink-0">{f.numero}. {f.titulo}</div>
+                <div className="w-full flex-1 h-6 bg-muted rounded overflow-hidden relative">
                   <div className="h-full transition-all" style={{
                     width: `${p}%`,
                     background: p === 100 ? "var(--mist)" : "linear-gradient(90deg, var(--deep), var(--lagoon))",
@@ -79,27 +79,27 @@ function ObraPage() {
             <article key={fase.id} className="bg-card border border-border rounded-xl overflow-hidden">
               <button
                 onClick={() => setAberta(open ? null : fase.id)}
-                className="w-full flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition"
+                className="w-full flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition text-left"
               >
-                {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+                {open ? <ChevronDown className="size-4 shrink-0" /> : <ChevronRight className="size-4 shrink-0" />}
                 <div className="flex items-center justify-center size-9 rounded-full font-serif text-sm shrink-0"
                   style={{ background: prog === 100 ? "var(--mist)" : "var(--secondary)", color: prog === 100 ? "white" : "var(--foreground)" }}>
                   {fase.numero}
                 </div>
-                <div className="flex-1 text-left">
-                  <h3 className="font-serif text-lg">{fase.titulo}</h3>
+                <div className="flex-1 min-w-0 text-left">
+                  <h3 className="font-serif text-lg truncate">{fase.titulo}</h3>
                   <p className="text-xs text-muted-foreground">{fase.tarefas.filter((t) => t.concluida).length} de {fase.tarefas.length} concluídas</p>
                 </div>
-                <div className="w-28 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div className="hidden sm:block w-28 h-1.5 bg-muted rounded-full overflow-hidden shrink-0">
                   <div className="h-full bg-[var(--lagoon)]" style={{ width: `${prog}%` }} />
                 </div>
-                <span className="text-xs text-muted-foreground tabular-nums w-12 text-right">{prog.toFixed(0)}%</span>
+                <span className="text-xs text-muted-foreground tabular-nums w-12 text-right shrink-0">{prog.toFixed(0)}%</span>
               </button>
 
               {open && (
                 <ul className="border-t border-border divide-y divide-border">
                   {fase.tarefas.map((t) => (
-                    <li key={t.id} className="px-5 py-3 flex items-start gap-3 group">
+                    <li key={t.id} className="px-5 py-3 flex items-start gap-3 group relative">
                       <button
                         onClick={() => actions.toggleTarefa(fase.id, t.id)}
                         className={`mt-0.5 size-5 rounded border flex items-center justify-center shrink-0 transition ${
@@ -110,10 +110,10 @@ function ObraPage() {
                       </button>
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm ${t.concluida ? "line-through text-muted-foreground" : ""}`}>{t.titulo}</p>
-                        <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-muted-foreground">
                           {t.dataPrevista && <span className="inline-flex items-center gap-1"><Calendar className="size-3" />Prev. {new Date(t.dataPrevista).toLocaleDateString("pt-BR")}</span>}
                           {t.custoOrcado != null && <span className="inline-flex items-center gap-1"><DollarSign className="size-3" />Orç. {formatBRL(t.custoOrcado)}</span>}
-                          {t.custoReal != null && <span className="text-[var(--mist)]">Real {formatBRL(t.custoReal)}</span>}
+                          {t.custoReal != null && <span className="text-[var(--mist)] font-medium">Real {formatBRL(t.custoReal)}</span>}
                         </div>
                       </div>
                       <TarefaEditor faseId={fase.id} tarefaId={t.id} tarefa={t} />
@@ -133,11 +133,11 @@ function TarefaEditor({ faseId, tarefaId, tarefa }: { faseId: string; tarefaId: 
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
-      <button onClick={() => setOpen(!open)} className="text-[11px] text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition">
+      <button onClick={() => setOpen(!open)} className="text-[11px] text-muted-foreground hover:text-foreground opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition">
         editar
       </button>
       {open && (
-        <div className="absolute right-0 top-6 z-10 w-64 p-3 bg-popover border border-border rounded-md shadow-lg space-y-2">
+        <div className="absolute right-0 top-6 z-10 w-64 max-w-[calc(100vw-3rem)] p-3 bg-popover border border-border rounded-md shadow-lg space-y-2">
           <Mini label="Data prevista" type="date" value={tarefa.dataPrevista ?? ""}
             onChange={(v) => actions.updateTarefa(faseId, tarefaId, { dataPrevista: v || undefined })} />
           <Mini label="Custo orçado" type="number" value={tarefa.custoOrcado?.toString() ?? ""}

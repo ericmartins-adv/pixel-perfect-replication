@@ -24,26 +24,26 @@ function Reunioes() {
   if (!sessao) return null;
 
   return (
-    <div className="p-8 lg:p-12 max-w-[1100px] mx-auto">
+    <div className="p-4 sm:p-8 lg:p-12 max-w-[1100px] mx-auto">
       <header className="mb-6">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Governança</p>
         <h1 className="font-serif text-4xl mt-2">Reuniões & votações</h1>
         <p className="text-muted-foreground mt-1">Decisões precisam de 2 dos 3 sócios. Prazo padrão: 72h.</p>
       </header>
 
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex gap-1 p-1 bg-muted rounded-md w-fit">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex gap-1 p-1 bg-muted rounded-md w-full sm:w-fit">
           <button onClick={() => setTab("votacoes")}
-            className={`px-4 py-1.5 text-sm rounded ${tab === "votacoes" ? "bg-card shadow-sm" : "text-muted-foreground"}`}>
+            className={`flex-1 sm:flex-none px-4 py-1.5 text-sm rounded ${tab === "votacoes" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             Votações
           </button>
           <button onClick={() => setTab("reunioes")}
-            className={`px-4 py-1.5 text-sm rounded ${tab === "reunioes" ? "bg-card shadow-sm" : "text-muted-foreground"}`}>
+            className={`flex-1 sm:flex-none px-4 py-1.5 text-sm rounded ${tab === "reunioes" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             Atas de reunião
           </button>
         </div>
         <button onClick={() => tab === "votacoes" ? setOpenVot(true) : setOpenReu(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium">
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium w-full sm:w-auto">
           <Plus className="size-4" /> {tab === "votacoes" ? "Nova votação" : "Nova reunião"}
         </button>
       </div>
@@ -58,9 +58,9 @@ function Reunioes() {
             const prazoMs = new Date(v.prazo).getTime() - Date.now();
             const horas = Math.max(0, Math.round(prazoMs / 3600000));
             return (
-              <article key={v.id} className="bg-card border border-border rounded-xl p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
+              <article key={v.id} className="bg-card border border-border rounded-xl p-5 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
                     <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded ${
                       v.decisao === "aprovada" ? "bg-[var(--mist)]/15 text-[var(--mist)]" :
                       v.decisao === "rejeitada" ? "bg-destructive/15 text-destructive" :
@@ -72,7 +72,7 @@ function Reunioes() {
                     <p className="text-sm text-muted-foreground mt-1">{v.descricao}</p>
                     {v.valor && <p className="text-sm font-medium mt-2 tabular-nums">Valor: {formatBRL(v.valor)}</p>}
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="text-left sm:text-right shrink-0">
                     <div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                       <Clock className="size-3" /> {horas}h restantes
                     </div>
@@ -80,7 +80,7 @@ function Reunioes() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 mt-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-5">
                   {SOCIOS.map((s) => {
                     const voto = v.votos[s.id];
                     const icon = voto.status === "aprovado" ? <Check className="size-3" /> :
@@ -101,19 +101,19 @@ function Reunioes() {
                 </div>
 
                 {v.decisao === "pendente" && meuVoto.status === "pendente" && (
-                  <div className="flex gap-2 mt-4 pt-4 border-t border-border">
+                  <div className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-border">
                     <button onClick={() => actions.votar(v.id, sessao as SocioId, "aprovado")}
-                      className="flex-1 py-2 rounded-md bg-[var(--mist)] text-white text-sm font-medium hover:opacity-90">
-                      <Check className="size-4 inline -mt-0.5 mr-1" /> Aprovar
+                      className="flex-1 py-2.5 rounded-md bg-[var(--mist)] text-white text-sm font-medium hover:opacity-90 inline-flex items-center justify-center gap-1.5">
+                      <Check className="size-4" /> Aprovar
                     </button>
                     <button onClick={() => {
                       const j = prompt("Justificativa para rejeitar:") ?? "";
                       actions.votar(v.id, sessao as SocioId, "rejeitado", j);
-                    }} className="flex-1 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:opacity-90">
-                      <X className="size-4 inline -mt-0.5 mr-1" /> Rejeitar
+                    }} className="flex-1 py-2.5 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:opacity-90 inline-flex items-center justify-center gap-1.5">
+                      <X className="size-4" /> Rejeitar
                     </button>
                     <button onClick={() => actions.votar(v.id, sessao as SocioId, "abstido" as VotoStatus)}
-                      className="flex-1 py-2 rounded-md border border-border text-sm">
+                      className="flex-1 py-2.5 rounded-md border border-border text-sm hover:bg-muted">
                       Abster-me
                     </button>
                   </div>
@@ -161,13 +161,13 @@ function Reunioes() {
               setTimeout(() => win.print(), 400);
             };
             return (
-            <article key={r.id} className="bg-card border border-border rounded-xl p-6">
-              <div className="flex items-start justify-between gap-4 mb-1">
+            <article key={r.id} className="bg-card border border-border rounded-xl p-5 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <FileSignature className="size-3.5" />
                   {new Date(r.data).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
                 </div>
-                <button onClick={imprimirAta} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded px-2.5 py-1 hover:bg-muted">
+                <button onClick={imprimirAta} className="inline-flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded px-2.5 py-1.5 hover:bg-muted w-full sm:w-auto">
                   <Printer className="size-3.5" /> Imprimir ata
                 </button>
               </div>

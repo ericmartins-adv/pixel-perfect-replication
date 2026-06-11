@@ -18,7 +18,7 @@ function SociosPage() {
   if (!sessao) return null;
 
   return (
-    <div className="p-8 lg:p-12 max-w-[1100px] mx-auto">
+    <div className="p-4 sm:p-8 lg:p-12 max-w-[1100px] mx-auto">
       <header className="mb-10">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Sociedade</p>
         <h1 className="font-serif text-4xl mt-2">Três sócios, partes iguais.</h1>
