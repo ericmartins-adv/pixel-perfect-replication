@@ -445,12 +445,23 @@ const uid = () =>
 // ── Actions ──────────────────────────────────────────────────────
 export const actions = {
   // Auth
-  async login(email: string, senha: string): Promise<Socio | null> {
+  async login(email: string, senha: string): Promise<{ socio: Socio | null; erro: string | null }> {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
-    if (error || !data.user) return null;
+    if (error) {
+      console.error("[login] Supabase error:", error.message, error.status);
+      const msg = error.message.toLowerCase();
+      if (msg.includes("email not confirmed")) return { socio: null, erro: "E-mail não confirmado. Verifique sua caixa de entrada ou peça ao administrador para confirmar a conta." };
+      if (msg.includes("invalid login") || msg.includes("invalid credentials")) return { socio: null, erro: "E-mail ou senha incorretos." };
+      if (msg.includes("too many requests") || error.status === 429) return { socio: null, erro: "Muitas tentativas. Aguarde alguns minutos e tente novamente." };
+      return { socio: null, erro: `Erro ao entrar: ${error.message}` };
+    }
+    if (!data.user) return { socio: null, erro: "Usuário não retornado pelo servidor." };
     const socioId = await resolverSocio(data.user);
-    if (!socioId) return null;
-    return SOCIOS.find((s) => s.id === socioId) ?? null;
+    if (!socioId) {
+      console.error("[login] resolverSocio returned null for email:", data.user.email);
+      return { socio: null, erro: "E-mail não cadastrado como sócio. Entre em contato com o administrador." };
+    }
+    return { socio: SOCIOS.find((s) => s.id === socioId) ?? null, erro: null };
   },
 
   async loginGoogle(): Promise<void> {

@@ -21,15 +21,16 @@ function LoginPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const s = await actions.login(email, senha);
-      if (!s) {
-        toast.error("E-mail ou senha inválidos");
-      } else {
-        toast.success(`Bem-vindo, ${s.nome.split(" ")[0]}`);
+      const { socio, erro } = await actions.login(email, senha);
+      if (erro) {
+        toast.error(erro);
+      } else if (socio) {
+        toast.success(`Bem-vindo, ${socio.nome.split(" ")[0]}`);
         router.navigate({ to: "/dashboard" });
       }
-    } catch {
-      toast.error("Erro ao conectar. Tente novamente.");
+    } catch (err) {
+      console.error("[submit] unexpected error:", err);
+      toast.error("Erro ao conectar. Verifique sua internet e tente novamente.");
     } finally {
       setSubmitting(false);
     }
