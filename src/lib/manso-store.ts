@@ -400,44 +400,58 @@ async function resolverSocio(user: { id: string; email?: string | null }): Promi
 }
 
 // ── Auth — onAuthStateChange como única fonte de verdade ─────────
-// Supabase v2 dispara INITIAL_SESSION na inicialização com a sessão
-// corrente (ou null). Isso elimina a race condition entre getSession()
-// e o listener que causava redirect prematuro para a tela de login.
 if (typeof window !== "undefined") {
+  // Timeout de segurança: se INITIAL_SESSION não disparar em 8s
+  // (Supabase inacessível, token refresh travado), libera a tela de login.
+  const authTimeout = setTimeout(() => {
+    if (!state.authChecked) {
+      console.warn("[auth] timeout — Supabase não respondeu, liberando tela de login");
+      state = { ...state, sessao: null, authChecked: true, loading: false };
+      notify();
+    }
+  }, 8000);
+
   supabase.auth.onAuthStateChange(async (event, session) => {
     console.log("[auth]", event, session?.user?.email ?? "—");
-
-    if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
-      if (session?.user) {
-        const socioId = await resolverSocio(session.user);
-        if (socioId) {
-          state = { ...state, sessao: socioId, authChecked: true, loading: true };
-          notify();
-          loadAllData();
+    try {
+      if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+        clearTimeout(authTimeout);
+        if (session?.user) {
+          const socioId = await resolverSocio(session.user);
+          if (socioId) {
+            state = { ...state, sessao: socioId, authChecked: true, loading: true };
+            notify();
+            loadAllData();
+          } else {
+            console.error("[auth] resolverSocio null para:", session.user.email);
+            state = { ...state, sessao: null, authChecked: true, loading: false };
+            notify();
+            await supabase.auth.signOut();
+          }
         } else {
-          console.error("[auth] resolverSocio null para:", session.user.email);
           state = { ...state, sessao: null, authChecked: true, loading: false };
           notify();
-          await supabase.auth.signOut();
         }
-      } else {
-        // INITIAL_SESSION com sessão nula = usuário não autenticado
+      } else if (event === "TOKEN_REFRESHED") {
+        if (session?.user && !state.sessao) {
+          const socioId = await resolverSocio(session.user);
+          if (socioId) {
+            state = { ...state, sessao: socioId, authChecked: true };
+            notify();
+          }
+        }
+      } else if (event === "SIGNED_OUT") {
+        clearTimeout(authTimeout);
+        state = { ...initialState, authChecked: true, loading: false };
+        persist();
+        notify();
+      }
+    } catch (err) {
+      console.error("[auth] erro no handler:", err);
+      if (!state.authChecked) {
         state = { ...state, sessao: null, authChecked: true, loading: false };
         notify();
       }
-    } else if (event === "TOKEN_REFRESHED") {
-      // Token renovado automaticamente — manter sessao existente
-      if (session?.user && !state.sessao) {
-        const socioId = await resolverSocio(session.user);
-        if (socioId) {
-          state = { ...state, sessao: socioId, authChecked: true };
-          notify();
-        }
-      }
-    } else if (event === "SIGNED_OUT") {
-      state = { ...initialState, authChecked: true, loading: false };
-      persist();
-      notify();
     }
   });
 }
