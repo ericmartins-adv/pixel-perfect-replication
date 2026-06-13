@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = 'https://mbjchxsyeqmcctydhybm.supabase.co'
-const SUPABASE_KEY = 'sb_publishable_42DU8qS9wxFmJlgxasR3Ew_mfStktrn'
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://oldpbfkuymexbxwhfcmz.supabase.co'
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY || 'sb_publishable_IcUXIXJfGE9H_dfHt-1UFQ_nUQZ_7M_'
 
 // Lazy singleton — createClient só é chamado no browser, nunca no servidor Node.js.
 // Durante o SSR, todas as chamadas retornam imediatamente sem efeito.
