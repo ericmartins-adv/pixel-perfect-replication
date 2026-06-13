@@ -15,11 +15,12 @@ export const Route = createFileRoute("/lancamentos")({
 function Lancamentos() {
   const router = useRouter();
   const sessao = useMansoStore((s) => s.sessao);
+  const authChecked = useMansoStore((s) => s.authChecked);
   const lancamentos = useMansoStore((s) => s.lancamentos);
   const [open, setOpen] = useState(false);
   const [filtro, setFiltro] = useState<"todos" | LancamentoTipo>("todos");
 
-  useEffect(() => { if (!sessao) router.navigate({ to: "/" }); }, [sessao, router]);
+  useEffect(() => { if (authChecked && !sessao) router.navigate({ to: "/" }); }, [authChecked, sessao, router]);
 
   const lista = useMemo(() => {
     const arr = [...lancamentos].sort((a, b) => b.data.localeCompare(a.data));

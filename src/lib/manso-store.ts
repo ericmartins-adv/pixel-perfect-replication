@@ -170,6 +170,7 @@ export interface Configuracoes {
 interface State {
   sessao: SocioId | null;
   loading: boolean;
+  authChecked: boolean;
   lancamentos: Lancamento[];
   fases: FaseObra[];
   documentos: Documento[];
@@ -261,6 +262,7 @@ const defaultConfig: Configuracoes = { metaObra: 850000, percReserva: 15, modelo
 const initialState: State = {
   sessao: null,
   loading: true,
+  authChecked: false,
   lancamentos: [],
   fases: FASES_INICIAIS,
   documentos: [],
@@ -279,7 +281,7 @@ function loadCache(): Partial<State> {
   }
 }
 
-let state: State = { ...initialState, ...loadCache(), loading: true };
+let state: State = { ...initialState, ...loadCache(), loading: true, authChecked: false };
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -288,7 +290,7 @@ function notify() {
 
 function persist() {
   if (typeof window === "undefined") return;
-  const { loading: _l, ...rest } = state;
+  const { loading: _l, authChecked: _a, ...rest } = state;
   localStorage.setItem(KEY, JSON.stringify(rest));
 }
 
@@ -397,39 +399,43 @@ async function resolverSocio(user: { id: string; email?: string | null }): Promi
   return null;
 }
 
-// ── Auth listener (inicia no carregamento do módulo) ─────────────
+// ── Auth — onAuthStateChange como única fonte de verdade ─────────
+// Supabase v2 dispara INITIAL_SESSION na inicialização com a sessão
+// corrente (ou null). Isso elimina a race condition entre getSession()
+// e o listener que causava redirect prematuro para a tela de login.
 if (typeof window !== "undefined") {
-  supabase.auth.getSession().then(async ({ data: { session } }) => {
-    if (session?.user) {
-      const socioId = await resolverSocio(session.user);
-      state = { ...state, sessao: socioId, loading: !!socioId };
-      notify();
-      if (socioId) loadAllData();
-      else {
-        state = { ...state, loading: false };
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log("[auth]", event, session?.user?.email ?? "—");
+
+    if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+      if (session?.user) {
+        const socioId = await resolverSocio(session.user);
+        if (socioId) {
+          state = { ...state, sessao: socioId, authChecked: true, loading: true };
+          notify();
+          loadAllData();
+        } else {
+          console.error("[auth] resolverSocio null para:", session.user.email);
+          state = { ...state, sessao: null, authChecked: true, loading: false };
+          notify();
+          await supabase.auth.signOut();
+        }
+      } else {
+        // INITIAL_SESSION com sessão nula = usuário não autenticado
+        state = { ...state, sessao: null, authChecked: true, loading: false };
         notify();
       }
-    } else {
-      state = { ...state, sessao: null, loading: false };
-      notify();
-    }
-  });
-
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === "SIGNED_IN" && session?.user) {
-      const socioId = await resolverSocio(session.user);
-      if (socioId) {
-        state = { ...state, sessao: socioId };
-        notify();
-        loadAllData();
-      } else {
-        // Usuário autenticado mas não é sócio cadastrado
-        await supabase.auth.signOut();
-        state = { ...state, sessao: null, loading: false };
-        notify();
+    } else if (event === "TOKEN_REFRESHED") {
+      // Token renovado automaticamente — manter sessao existente
+      if (session?.user && !state.sessao) {
+        const socioId = await resolverSocio(session.user);
+        if (socioId) {
+          state = { ...state, sessao: socioId, authChecked: true };
+          notify();
+        }
       }
     } else if (event === "SIGNED_OUT") {
-      state = { ...initialState, loading: false };
+      state = { ...initialState, authChecked: true, loading: false };
       persist();
       notify();
     }
@@ -461,6 +467,11 @@ export const actions = {
       console.error("[login] resolverSocio returned null for email:", data.user.email);
       return { socio: null, erro: "E-mail não cadastrado como sócio. Entre em contato com o administrador." };
     }
+    // Seta estado ANTES de retornar — garante que sessao já está definida
+    // quando o componente de login chamar router.navigate, evitando race condition.
+    state = { ...state, sessao: socioId, authChecked: true, loading: true };
+    notify();
+    loadAllData();
     return { socio: SOCIOS.find((s) => s.id === socioId) ?? null, erro: null };
   },
 

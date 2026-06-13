@@ -45,10 +45,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const hydrated = useClientMounted();
   const sessao = useMansoStore((s) => s.sessao);
   const loading = useMansoStore((s) => s.loading);
+  const authChecked = useMansoStore((s) => s.authChecked);
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
 
   if (!hydrated) return <>{children}</>;
+
+  // Aguarda verificação inicial de auth para evitar flash do login antes de saber se há sessão
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <Loader2 className="size-5 animate-spin" />
+          <span className="text-sm">Verificando acesso…</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!sessao) return <>{children}</>;
 
   const socio = getSocio(sessao);

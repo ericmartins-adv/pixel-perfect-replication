@@ -28,13 +28,14 @@ interface TxClassificada extends OfxTx {
 function Importar() {
   const router = useRouter();
   const sessao = useMansoStore((s) => s.sessao);
+  const authChecked = useMansoStore((s) => s.authChecked);
   const [txs, setTxs] = useState<TxClassificada[]>([]);
   const [importando, setImportando] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!sessao) router.navigate({ to: "/" });
-  }, [sessao, router]);
+    if (authChecked && !sessao) router.navigate({ to: "/" });
+  }, [authChecked, sessao, router]);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

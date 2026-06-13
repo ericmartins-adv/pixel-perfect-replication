@@ -25,12 +25,13 @@ const COLORS = ["#0c2340", "#1a4a6e", "#2d8a9e", "#5cbdb9", "#c9a84c", "#8b7355"
 function Dashboard() {
   const router = useRouter();
   const sessao = useMansoStore((s) => s.sessao);
+  const authChecked = useMansoStore((s) => s.authChecked);
   const lancamentos = useMansoStore((s) => s.lancamentos);
   const fases = useMansoStore((s) => s.fases);
 
   useEffect(() => {
-    if (!sessao) router.navigate({ to: "/" });
-  }, [sessao, router]);
+    if (authChecked && !sessao) router.navigate({ to: "/" });
+  }, [authChecked, sessao, router]);
 
   const caixa = useMemo(() => caixaTotal(lancamentos), [lancamentos]);
   const saldos = useMemo(() => calcularSaldos(lancamentos), [lancamentos]);
