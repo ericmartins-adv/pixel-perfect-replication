@@ -1,5 +1,5 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { useMansoStore, calcularSaldos, getSocio, formatBRL } from "@/lib/manso-store";
 import { useClientMounted } from "@/hooks/use-client-mounted";
 import { AlertTriangle, Bell, Vote, FileText, TrendingDown, CheckCircle2 } from "lucide-react";
@@ -18,14 +18,11 @@ interface Alerta {
 }
 
 function Alertas() {
-  const router = useRouter();
   const mounted = useClientMounted();
   const sessao = useMansoStore((s) => s.sessao);
   const votacoes = useMansoStore((s) => s.votacoes);
   const documentos = useMansoStore((s) => s.documentos);
   const lancamentos = useMansoStore((s) => s.lancamentos);
-
-  useEffect(() => { if (mounted && !sessao) router.navigate({ to: "/" }); }, [mounted, sessao, router]);
 
   const alertas = useMemo<Alerta[]>(() => {
     const arr: Alerta[] = [];

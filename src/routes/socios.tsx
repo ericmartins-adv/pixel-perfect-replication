@@ -1,5 +1,5 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { useMansoStore, calcularSaldos, formatBRL, SOCIOS } from "@/lib/manso-store";
 
 export const Route = createFileRoute("/socios")({
@@ -8,11 +8,8 @@ export const Route = createFileRoute("/socios")({
 });
 
 function SociosPage() {
-  const router = useRouter();
   const sessao = useMansoStore((s) => s.sessao);
-  const authChecked = useMansoStore((s) => s.authChecked);
   const lancamentos = useMansoStore((s) => s.lancamentos);
-  useEffect(() => { if (authChecked && !sessao) router.navigate({ to: "/" }); }, [authChecked, sessao, router]);
 
   const saldos = useMemo(() => calcularSaldos(lancamentos), [lancamentos]);
 

@@ -1,5 +1,5 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useMansoStore, actions, SOCIOS, getSocio, formatBRL, type SocioId, type VotoStatus } from "@/lib/manso-store";
 import { useClientMounted } from "@/hooks/use-client-mounted";
 import { Plus, Check, X, Clock, FileSignature, Vote as VoteIcon, Printer } from "lucide-react";
@@ -11,7 +11,6 @@ export const Route = createFileRoute("/reunioes")({
 });
 
 function Reunioes() {
-  const router = useRouter();
   const mounted = useClientMounted();
   const sessao = useMansoStore((s) => s.sessao);
   const votacoes = useMansoStore((s) => s.votacoes);
@@ -19,8 +18,6 @@ function Reunioes() {
   const [tab, setTab] = useState<"votacoes" | "reunioes">("votacoes");
   const [openVot, setOpenVot] = useState(false);
   const [openReu, setOpenReu] = useState(false);
-
-  useEffect(() => { if (mounted && !sessao) router.navigate({ to: "/" }); }, [mounted, sessao, router]);
   if (!sessao) return null;
 
   return (

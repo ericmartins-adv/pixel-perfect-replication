@@ -1,5 +1,5 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useMansoStore, actions, getSocio, type DocCategoria } from "@/lib/manso-store";
 import { useClientMounted } from "@/hooks/use-client-mounted";
 import { FileText, Upload, Trash2, Search, AlertTriangle, X } from "lucide-react";
@@ -16,15 +16,12 @@ export const Route = createFileRoute("/documentos")({
 });
 
 function DocumentosPage() {
-  const router = useRouter();
   const mounted = useClientMounted();
   const sessao = useMansoStore((s) => s.sessao);
   const documentos = useMansoStore((s) => s.documentos);
   const [busca, setBusca] = useState("");
   const [catFiltro, setCatFiltro] = useState<"todas" | DocCategoria>("todas");
   const [open, setOpen] = useState(false);
-
-  useEffect(() => { if (mounted && !sessao) router.navigate({ to: "/" }); }, [mounted, sessao, router]);
   if (!sessao) return null;
 
   const docs = documentos.filter((d) => {
