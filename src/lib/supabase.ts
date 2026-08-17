@@ -1,7 +1,11 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://oldpbfkuymexbxwhfcmz.supabase.co'
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY || 'sb_publishable_IcUXIXJfGE9H_dfHt-1UFQ_nUQZ_7M_'
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY
+
+if (typeof window !== 'undefined' && (!SUPABASE_URL || !SUPABASE_KEY)) {
+  throw new Error('VITE_SUPABASE_URL e VITE_SUPABASE_KEY precisam estar configuradas (.env local ou variáveis de ambiente do Vercel).')
+}
 
 // Lazy singleton — createClient só é chamado no browser, nunca no servidor Node.js.
 // Durante o SSR, todas as chamadas retornam imediatamente sem efeito.
@@ -9,7 +13,7 @@ let _client: SupabaseClient | null = null
 
 function getRealClient(): SupabaseClient {
   if (!_client) {
-    _client = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    _client = createClient(SUPABASE_URL!, SUPABASE_KEY!, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,

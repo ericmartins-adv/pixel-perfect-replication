@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect, useMemo } from "react";
 import { useMansoStore, calcularSaldos, caixaTotal, formatBRL, getSocio } from "@/lib/manso-store";
 import { useClientMounted } from "@/hooks/use-client-mounted";
 import { ArrowUpRight, ArrowDownRight, Wallet, Target } from "lucide-react";
@@ -10,9 +10,12 @@ export const Route = createFileRoute("/minha-posicao")({
 });
 
 function MinhaPosicao() {
+  const router = useRouter();
   const mounted = useClientMounted();
   const sessao = useMansoStore((s) => s.sessao);
   const lancamentos = useMansoStore((s) => s.lancamentos);
+
+  useEffect(() => { if (mounted && !sessao) router.navigate({ to: "/" }); }, [mounted, sessao, router]);
 
   const saldos = useMemo(() => calcularSaldos(lancamentos), [lancamentos]);
   const caixa = useMemo(() => caixaTotal(lancamentos), [lancamentos]);

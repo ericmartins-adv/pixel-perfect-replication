@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useMansoStore, actions, caixaTotal, calcularSaldos, formatBRL } from "@/lib/manso-store";
 import { useClientMounted } from "@/hooks/use-client-mounted";
 import { Target, ShieldCheck, Calculator } from "lucide-react";
@@ -11,10 +11,13 @@ export const Route = createFileRoute("/orcamento")({
 });
 
 function OrcamentoPage() {
+  const router = useRouter();
   const mounted = useClientMounted();
   const sessao = useMansoStore((s) => s.sessao);
   const lancamentos = useMansoStore((s) => s.lancamentos);
   const config = useMansoStore((s) => s.config);
+
+  useEffect(() => { if (mounted && !sessao) router.navigate({ to: "/" }); }, [mounted, sessao, router]);
 
   const [meta, setMeta] = useState(config.metaObra.toString());
   const [reserva, setReserva] = useState(config.percReserva.toString());

@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useMansoStore,
   parseOFX,
@@ -28,13 +28,19 @@ interface TxClassificada extends OfxTx {
 function Importar() {
   const router = useRouter();
   const sessao = useMansoStore((s) => s.sessao);
+  const authChecked = useMansoStore((s) => s.authChecked);
   const [txs, setTxs] = useState<TxClassificada[]>([]);
   const [importando, setImportando] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (authChecked && !sessao) router.navigate({ to: "/" });
+  }, [authChecked, sessao, router]);
+
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".ofx")) { toast.error("Apenas arquivos .ofx são suportados"); return; }
     const reader = new FileReader();
     reader.onload = (ev) => {
       const content = ev.target?.result as string;
@@ -63,7 +69,6 @@ function Importar() {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (!file) return;
-    if (!file.name.endsWith(".ofx")) { toast.error("Apenas arquivos .ofx são suportados"); return; }
     const fakeEvent = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>;
     handleFile(fakeEvent);
   };

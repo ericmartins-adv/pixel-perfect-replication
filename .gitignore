@@ -42,3 +42,5 @@ mcp_config.json
 .cursor/
 .gemini/
 
+.vercel
+.env*

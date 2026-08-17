@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useMansoStore, actions, getSocio, type DocCategoria } from "@/lib/manso-store";
 import { useClientMounted } from "@/hooks/use-client-mounted";
 import { FileText, Upload, Trash2, Search, AlertTriangle, X } from "lucide-react";
@@ -16,12 +16,15 @@ export const Route = createFileRoute("/documentos")({
 });
 
 function DocumentosPage() {
+  const router = useRouter();
   const mounted = useClientMounted();
   const sessao = useMansoStore((s) => s.sessao);
   const documentos = useMansoStore((s) => s.documentos);
   const [busca, setBusca] = useState("");
   const [catFiltro, setCatFiltro] = useState<"todas" | DocCategoria>("todas");
   const [open, setOpen] = useState(false);
+
+  useEffect(() => { if (mounted && !sessao) router.navigate({ to: "/" }); }, [mounted, sessao, router]);
   if (!sessao) return null;
 
   const docs = documentos.filter((d) => {
@@ -148,7 +151,8 @@ function UploadModal({ sessao, onClose }: { sessao: string; onClose: () => void 
         <form onSubmit={submit} className="p-6 space-y-4">
           <label className="block">
             <span className="text-xs uppercase tracking-wider text-muted-foreground">Arquivo</span>
-            <input type="file" onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
+            <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+              onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
               className="w-full mt-1 text-sm" />
           </label>
           <label className="block">

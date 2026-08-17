@@ -259,13 +259,10 @@ const KEY = "manso-villa-state-v3";
 
 const defaultConfig: Configuracoes = { metaObra: 850000, percReserva: 15, modeloFinanceiro: "fundo-comum" };
 
-// Sócio padrão — sem login, o app já abre como "eric"
-const DEFAULT_SOCIO: SocioId = "eric";
-
 const initialState: State = {
-  sessao: DEFAULT_SOCIO,
+  sessao: null,
   loading: true,
-  authChecked: true,
+  authChecked: false,
   lancamentos: [],
   fases: FASES_INICIAIS,
   documentos: [],
@@ -284,7 +281,7 @@ function loadCache(): Partial<State> {
   }
 }
 
-let state: State = { ...initialState, ...loadCache(), sessao: DEFAULT_SOCIO, loading: true, authChecked: true };
+let state: State = { ...initialState, ...loadCache(), sessao: null, loading: true, authChecked: false };
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -310,11 +307,9 @@ export function useMansoStore<T>(selector: (s: State) => T): T {
   );
 }
 
-// ── Carga de dados do Supabase (sem auth — acesso anon) ──────────
+// ── Carga de dados do Supabase ───────────────────────────────────
 async function loadAllData() {
   try {
-    console.log("[Store] loadAllData — modo sem autenticação (anon key)");
-
     const [
       { data: lancamentos, error: e1 },
       { data: fases, error: e2 },
@@ -368,11 +363,91 @@ async function loadAllData() {
   }
 }
 
-// ── Inicialização automática (sem auth) ──────────────────────────
+// ── Mapa canônico de emails reais → socio_id ─────────────────────
+// Inclui tanto os emails @mansovilla.app quanto os emails pessoais
+// dos sócios, para que o login funcione independente do profiles table.
+const EMAIL_SOCIO_MAP: Record<string, SocioId> = {
+  "eric@mansovilla.app":     "eric",
+  "michael@mansovilla.app":  "michael",
+  "heryk@mansovilla.app":    "heryk",
+  "ericfsmartins@gmail.com": "eric",
+  "michael.kazuo@gmail.com": "michael",
+  "herykdedeus@outlook.com": "heryk",
+};
+
+// ── Resolução de sócio a partir de sessão Supabase ───────────────
+// 1. Tenta match direto por email (mapa canônico)
+// 2. Se não encontrar, consulta tabela `profiles` (fallback para OAuth)
+async function resolverSocio(user: { id: string; email?: string | null }): Promise<SocioId | null> {
+  const email = (user.email ?? "").toLowerCase();
+
+  // Match direto por email
+  if (EMAIL_SOCIO_MAP[email]) return EMAIL_SOCIO_MAP[email];
+
+  // Fallback: consulta tabela profiles (Google OAuth, emails não mapeados)
+  const { data } = await supabase
+    .from("profiles")
+    .select("socio_id")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (data?.socio_id) return data.socio_id as SocioId;
+  return null;
+}
+
+// ── Auth — onAuthStateChange como única fonte de verdade ─────────
 if (typeof window !== "undefined") {
-  // Carrega dados imediatamente ao abrir o app, sem esperar autenticação
-  console.log("[init] Modo sem autenticação — carregando dados como", DEFAULT_SOCIO);
-  loadAllData();
+  // Timeout de segurança: se INITIAL_SESSION não disparar em 8s
+  // (Supabase inacessível, token refresh travado), libera a tela de login.
+  const authTimeout = setTimeout(() => {
+    if (!state.authChecked) {
+      console.warn("[auth] timeout — Supabase não respondeu, liberando tela de login");
+      state = { ...state, sessao: null, authChecked: true, loading: false };
+      notify();
+    }
+  }, 8000);
+
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    try {
+      if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+        clearTimeout(authTimeout);
+        if (session?.user) {
+          const socioId = await resolverSocio(session.user);
+          if (socioId) {
+            state = { ...state, sessao: socioId, authChecked: true, loading: true };
+            notify();
+            loadAllData();
+          } else {
+            console.error("[auth] resolverSocio null para:", session.user.email);
+            state = { ...state, sessao: null, authChecked: true, loading: false };
+            notify();
+            await supabase.auth.signOut();
+          }
+        } else {
+          state = { ...state, sessao: null, authChecked: true, loading: false };
+          notify();
+        }
+      } else if (event === "TOKEN_REFRESHED") {
+        if (session?.user && !state.sessao) {
+          const socioId = await resolverSocio(session.user);
+          if (socioId) {
+            state = { ...state, sessao: socioId, authChecked: true };
+            notify();
+          }
+        }
+      } else if (event === "SIGNED_OUT") {
+        clearTimeout(authTimeout);
+        state = { ...initialState, authChecked: true, loading: false };
+        persist();
+        notify();
+      }
+    } catch (err) {
+      console.error("[auth] erro no handler:", err);
+      if (!state.authChecked) {
+        state = { ...state, sessao: null, authChecked: true, loading: false };
+        notify();
+      }
+    }
+  });
 }
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -383,11 +458,33 @@ const uid = () =>
 
 // ── Actions ──────────────────────────────────────────────────────
 export const actions = {
-  // Trocar sócio ativo (substitui login — permite simular visão de cada sócio)
-  switchSocio(id: SocioId) {
-    state = { ...state, sessao: id };
-    persist();
+  // Auth
+  async login(email: string, senha: string): Promise<{ socio: Socio | null; erro: string | null }> {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes("email not confirmed")) return { socio: null, erro: "E-mail não confirmado. Verifique sua caixa de entrada ou peça ao administrador para confirmar a conta." };
+      if (msg.includes("invalid login") || msg.includes("invalid credentials")) return { socio: null, erro: "E-mail ou senha incorretos." };
+      if (msg.includes("too many requests") || error.status === 429) return { socio: null, erro: "Muitas tentativas. Aguarde alguns minutos e tente novamente." };
+      return { socio: null, erro: `Erro ao entrar: ${error.message}` };
+    }
+    if (!data.user) return { socio: null, erro: "Usuário não retornado pelo servidor." };
+    const socioId = await resolverSocio(data.user);
+    if (!socioId) {
+      console.error("[login] resolverSocio returned null for email:", data.user.email);
+      await supabase.auth.signOut();
+      return { socio: null, erro: "E-mail não cadastrado como sócio. Entre em contato com o administrador." };
+    }
+    // Seta estado ANTES de retornar — garante que sessao já está definida
+    // quando o componente de login chamar router.navigate, evitando race condition.
+    state = { ...state, sessao: socioId, authChecked: true, loading: true };
     notify();
+    loadAllData();
+    return { socio: SOCIOS.find((s) => s.id === socioId) ?? null, erro: null };
+  },
+
+  async logout() {
+    await supabase.auth.signOut();
   },
 
   // Lançamentos

@@ -1,3 +1,8 @@
+-- ⚠️ OBSOLETO / NÃO EXECUTE — mantido só como histórico.
+-- Este script deixa todas as tabelas abertas para qualquer pessoa com a
+-- anon key (pública), sem exigir login. Foi substituído por
+-- 003_restaurar_rls_autenticada.sql, que exige auth.uid() válido.
+--
 -- Permite acesso anônimo para todas as tabelas (RLS = true, mas políticas abertas)
 
 drop policy if exists "auth_lancamentos" on lancamentos;

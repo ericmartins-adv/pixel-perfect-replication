@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import {
   useMansoStore, actions, SOCIOS, CATEGORIAS, formatBRL, getSocio,
   type SocioId, type Categoria, type LancamentoTipo,
@@ -13,10 +13,14 @@ export const Route = createFileRoute("/lancamentos")({
 });
 
 function Lancamentos() {
+  const router = useRouter();
   const sessao = useMansoStore((s) => s.sessao);
+  const authChecked = useMansoStore((s) => s.authChecked);
   const lancamentos = useMansoStore((s) => s.lancamentos);
   const [open, setOpen] = useState(false);
   const [filtro, setFiltro] = useState<"todos" | LancamentoTipo>("todos");
+
+  useEffect(() => { if (authChecked && !sessao) router.navigate({ to: "/" }); }, [authChecked, sessao, router]);
 
   const lista = useMemo(() => {
     const arr = [...lancamentos].sort((a, b) => b.data.localeCompare(a.data));

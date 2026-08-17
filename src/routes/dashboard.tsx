@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
+import { useEffect, useMemo } from "react";
 import {
   useMansoStore,
   calcularSaldos,
@@ -23,9 +23,15 @@ const META_OBRA = 850000; // estimativa de construção
 const COLORS = ["#0c2340", "#1a4a6e", "#2d8a9e", "#5cbdb9", "#c9a84c", "#8b7355", "#87a878", "#c4654a", "#4a6741", "#94a3b8"];
 
 function Dashboard() {
+  const router = useRouter();
   const sessao = useMansoStore((s) => s.sessao);
+  const authChecked = useMansoStore((s) => s.authChecked);
   const lancamentos = useMansoStore((s) => s.lancamentos);
   const fases = useMansoStore((s) => s.fases);
+
+  useEffect(() => {
+    if (authChecked && !sessao) router.navigate({ to: "/" });
+  }, [authChecked, sessao, router]);
 
   const caixa = useMemo(() => caixaTotal(lancamentos), [lancamentos]);
   const saldos = useMemo(() => calcularSaldos(lancamentos), [lancamentos]);
