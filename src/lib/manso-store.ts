@@ -20,7 +20,7 @@ export const SOCIOS: Socio[] = [
   {
     id: "eric",
     nome: "Eric Fernando de Souza Martins",
-    email: "eric@mansovilla.app",
+    email: "ericfsmartins@gmail.com",
     iniciais: "EM",
     cor: "#1A6B72",
     apelidos: ["ERIC", "FERNANDO", "MARTINS"],
@@ -28,7 +28,7 @@ export const SOCIOS: Socio[] = [
   {
     id: "michael",
     nome: "Michael Kazuo Furuta",
-    email: "michael@mansovilla.app",
+    email: "michael.kazuo@gmail.com",
     iniciais: "MF",
     cor: "#8E44AD",
     apelidos: ["MICHAEL", "KAZUO", "FURUTA"],
@@ -36,7 +36,7 @@ export const SOCIOS: Socio[] = [
   {
     id: "heryk",
     nome: "Heryk de Deus Pereira",
-    email: "heryk@mansovilla.app",
+    email: "herykdedeus@outlook.com",
     iniciais: "HP",
     cor: "#E67E22",
     apelidos: ["HERYK", "PEREIRA"],

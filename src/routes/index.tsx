@@ -97,7 +97,7 @@ function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-3 py-2.5 rounded-md border border-input bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-                  placeholder="nome@mansovilla.app"
+                  placeholder="seu e-mail cadastrado"
                   autoComplete="email"
                 />
               </div>
