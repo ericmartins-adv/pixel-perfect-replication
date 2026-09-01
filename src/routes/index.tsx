@@ -12,6 +12,8 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [modoRecuperar, setModoRecuperar] = useState(false);
+  const [enviandoRecuperacao, setEnviandoRecuperacao] = useState(false);
 
   useEffect(() => {
     if (sessao) router.navigate({ to: "/dashboard" });
@@ -33,6 +35,21 @@ function LoginPage() {
       toast.error("Erro ao conectar. Verifique sua internet e tente novamente.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const enviarRecuperacao = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEnviandoRecuperacao(true);
+    try {
+      await actions.requestPasswordReset(email);
+      toast.success("Se esse e-mail estiver cadastrado, enviamos um link para redefinir a senha.");
+      setModoRecuperar(false);
+    } catch (err) {
+      console.error("[recuperar] unexpected error:", err);
+      toast.error("Erro ao enviar. Verifique sua internet e tente novamente.");
+    } finally {
+      setEnviandoRecuperacao(false);
     }
   };
 
@@ -79,56 +96,106 @@ function LoginPage() {
             <Anchor className="size-5 text-[var(--lagoon)]" />
             <span className="font-serif text-2xl">Manso Villa</span>
           </div>
-          <h2 className="font-serif text-3xl">Entrar</h2>
+          <h2 className="font-serif text-3xl">{modoRecuperar ? "Redefinir senha" : "Entrar"}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Acesso restrito aos sócios do projeto.
+            {modoRecuperar
+              ? "Informe seu e-mail cadastrado para receber um link de redefinição."
+              : "Acesso restrito aos sócios do projeto."}
           </p>
 
-          <form onSubmit={submit} className="mt-8 space-y-4">
-            <label className="block">
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                E-mail
-              </span>
-              <div className="mt-1.5 relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2.5 rounded-md border border-input bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-                  placeholder="seu e-mail cadastrado"
-                  autoComplete="email"
-                />
-              </div>
-            </label>
+          {modoRecuperar ? (
+            <form onSubmit={enviarRecuperacao} className="mt-8 space-y-4">
+              <label className="block">
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  E-mail
+                </span>
+                <div className="mt-1.5 relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2.5 rounded-md border border-input bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                    placeholder="seu e-mail cadastrado"
+                    autoComplete="email"
+                  />
+                </div>
+              </label>
 
-            <label className="block">
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Senha
-              </span>
-              <div className="mt-1.5 relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <input
-                  type="password"
-                  required
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2.5 rounded-md border border-input bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                />
-              </div>
-            </label>
+              <button
+                type="submit"
+                disabled={enviandoRecuperacao}
+                className="w-full py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition disabled:opacity-60"
+              >
+                {enviandoRecuperacao ? "Enviando…" : "Enviar link de redefinição"}
+              </button>
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition disabled:opacity-60"
-            >
-              {submitting ? "Entrando…" : "Entrar no projeto"}
-            </button>
-          </form>
+              <button
+                type="button"
+                onClick={() => setModoRecuperar(false)}
+                className="w-full py-2 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Voltar para o login
+              </button>
+            </form>
+          ) : (
+            <>
+              <form onSubmit={submit} className="mt-8 space-y-4">
+                <label className="block">
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    E-mail
+                  </span>
+                  <div className="mt-1.5 relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full pl-10 pr-3 py-2.5 rounded-md border border-input bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                      placeholder="seu e-mail cadastrado"
+                      autoComplete="email"
+                    />
+                  </div>
+                </label>
+
+                <label className="block">
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Senha
+                  </span>
+                  <div className="mt-1.5 relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                    <input
+                      type="password"
+                      required
+                      value={senha}
+                      onChange={(e) => setSenha(e.target.value)}
+                      className="w-full pl-10 pr-3 py-2.5 rounded-md border border-input bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                    />
+                  </div>
+                </label>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition disabled:opacity-60"
+                >
+                  {submitting ? "Entrando…" : "Entrar no projeto"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setModoRecuperar(true)}
+                  className="w-full py-1 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Esqueci minha senha
+                </button>
+              </form>
+            </>
+          )}
 
           <p className="mt-6 text-center text-[11px] text-muted-foreground">
             Acesso exclusivo para os sócios cadastrados.

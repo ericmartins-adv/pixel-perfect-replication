@@ -487,6 +487,21 @@ export const actions = {
     await supabase.auth.signOut();
   },
 
+  async requestPasswordReset(email: string): Promise<{ ok: boolean; erro: string | null }> {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: typeof window !== "undefined" ? `${window.location.origin}/redefinir-senha` : undefined,
+    });
+    if (error) return { ok: false, erro: error.message };
+    return { ok: true, erro: null };
+  },
+
+  async updatePassword(novaSenha: string): Promise<{ ok: boolean; erro: string | null }> {
+    const { error } = await supabase.auth.updateUser({ password: novaSenha });
+    if (error) return { ok: false, erro: error.message };
+    await supabase.auth.signOut();
+    return { ok: true, erro: null };
+  },
+
   // Lançamentos
   async addLancamento(l: Omit<Lancamento, "id" | "criadoEm">) {
     const novo: Lancamento = { ...l, id: uid(), criadoEm: new Date().toISOString() };
