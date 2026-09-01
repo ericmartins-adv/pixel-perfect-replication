@@ -13,6 +13,7 @@ import { Route as SociosRouteImport } from './routes/socios'
 import { Route as ReunioesRouteImport } from './routes/reunioes'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
+import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as OrcamentoRouteImport } from './routes/orcamento'
 import { Route as ObraRouteImport } from './routes/obra'
 import { Route as MinhaPosicaoRouteImport } from './routes/minha-posicao'
@@ -41,6 +42,11 @@ const RelatoriosRoute = RelatoriosRouteImport.update({
 const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
   id: '/redefinir-senha',
   path: '/redefinir-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrcamentoRoute = OrcamentoRouteImport.update({
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/minha-posicao': typeof MinhaPosicaoRoute
   '/obra': typeof ObraRoute
   '/orcamento': typeof OrcamentoRoute
+  '/perfil': typeof PerfilRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/minha-posicao': typeof MinhaPosicaoRoute
   '/obra': typeof ObraRoute
   '/orcamento': typeof OrcamentoRoute
+  '/perfil': typeof PerfilRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/minha-posicao': typeof MinhaPosicaoRoute
   '/obra': typeof ObraRoute
   '/orcamento': typeof OrcamentoRoute
+  '/perfil': typeof PerfilRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/minha-posicao'
     | '/obra'
     | '/orcamento'
+    | '/perfil'
     | '/redefinir-senha'
     | '/relatorios'
     | '/reunioes'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/minha-posicao'
     | '/obra'
     | '/orcamento'
+    | '/perfil'
     | '/redefinir-senha'
     | '/relatorios'
     | '/reunioes'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/minha-posicao'
     | '/obra'
     | '/orcamento'
+    | '/perfil'
     | '/redefinir-senha'
     | '/relatorios'
     | '/reunioes'
@@ -193,6 +205,7 @@ export interface RootRouteChildren {
   MinhaPosicaoRoute: typeof MinhaPosicaoRoute
   ObraRoute: typeof ObraRoute
   OrcamentoRoute: typeof OrcamentoRoute
+  PerfilRoute: typeof PerfilRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   RelatoriosRoute: typeof RelatoriosRoute
   ReunioesRoute: typeof ReunioesRoute
@@ -227,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/redefinir-senha'
       fullPath: '/redefinir-senha'
       preLoaderRoute: typeof RedefinirSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orcamento': {
@@ -305,6 +325,7 @@ const rootRouteChildren: RootRouteChildren = {
   MinhaPosicaoRoute: MinhaPosicaoRoute,
   ObraRoute: ObraRoute,
   OrcamentoRoute: OrcamentoRoute,
+  PerfilRoute: PerfilRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   RelatoriosRoute: RelatoriosRoute,
   ReunioesRoute: ReunioesRoute,

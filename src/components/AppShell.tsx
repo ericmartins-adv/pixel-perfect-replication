@@ -5,7 +5,7 @@ import { actions, getSocio, useMansoStore } from "@/lib/manso-store";
 import {
   Anchor, LogOut, LayoutDashboard, Receipt, Users, Hammer,
   Target, FileText, Vote, BarChart3, Bell, User, Upload, Loader2,
-  MoreHorizontal, X,
+  MoreHorizontal, X, IdCard,
 } from "lucide-react";
 
 const NAV = [
@@ -20,6 +20,7 @@ const NAV = [
   { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/alertas", label: "Alertas", icon: Bell },
   { to: "/socios", label: "Sócios", icon: Users },
+  { to: "/perfil", label: "Meu perfil", icon: IdCard },
 ] as const;
 
 // 4 primary items in the mobile bottom bar
@@ -39,6 +40,7 @@ const MORE_NAV = [
   { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/alertas", label: "Alertas", icon: Bell },
   { to: "/socios", label: "Sócios", icon: Users },
+  { to: "/perfil", label: "Meu perfil", icon: IdCard },
 ] as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -102,16 +104,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="px-3 py-3 border-t border-sidebar-border/40">
           <div className="flex items-center gap-3 px-2 py-2">
-            <div
-              className="size-9 rounded-full flex items-center justify-center text-sm font-semibold text-white shrink-0"
-              style={{ backgroundColor: socio.cor }}
-            >
-              {socio.iniciais}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium truncate">{socio.nome.split(" ")[0]}</p>
-              <p className="text-[10px] text-sidebar-foreground/55 truncate">{socio.email}</p>
-            </div>
+            <Link to="/perfil" className="flex items-center gap-3 min-w-0 flex-1">
+              <div
+                className="size-9 rounded-full flex items-center justify-center text-sm font-semibold text-white shrink-0"
+                style={{ backgroundColor: socio.cor }}
+              >
+                {socio.iniciais}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium truncate">{socio.nome.split(" ")[0]}</p>
+                <p className="text-[10px] text-sidebar-foreground/55 truncate">{socio.email}</p>
+              </div>
+            </Link>
             <button
               onClick={async () => {
                 await actions.logout();

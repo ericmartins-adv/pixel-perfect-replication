@@ -167,8 +167,21 @@ export interface Configuracoes {
   modeloFinanceiro: "fundo-comum" | "reembolso-direto";
 }
 
+export interface PerfilCadastral {
+  nome: string;
+  cpf: string;
+  telefone: string;
+  banco: string;
+  agencia: string;
+  conta: string;
+  chavePix: string;
+}
+
+const PERFIL_VAZIO: PerfilCadastral = { nome: "", cpf: "", telefone: "", banco: "", agencia: "", conta: "", chavePix: "" };
+
 interface State {
   sessao: SocioId | null;
+  userId: string | null;
   loading: boolean;
   authChecked: boolean;
   lancamentos: Lancamento[];
@@ -177,6 +190,7 @@ interface State {
   votacoes: Votacao[];
   reunioes: Reuniao[];
   config: Configuracoes;
+  perfil: PerfilCadastral;
 }
 
 // ── Mappers DB → App ─────────────────────────────────────────────
@@ -254,6 +268,19 @@ function mapReuniao(r: any): Reuniao {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapPerfil(r: any): PerfilCadastral {
+  return {
+    nome: r?.nome ?? "",
+    cpf: r?.cpf ?? "",
+    telefone: r?.telefone ?? "",
+    banco: r?.banco ?? "",
+    agencia: r?.agencia ?? "",
+    conta: r?.conta ?? "",
+    chavePix: r?.chave_pix ?? "",
+  };
+}
+
 // ── Estado ───────────────────────────────────────────────────────
 const KEY = "manso-villa-state-v3";
 
@@ -261,6 +288,7 @@ const defaultConfig: Configuracoes = { metaObra: 850000, percReserva: 15, modelo
 
 const initialState: State = {
   sessao: null,
+  userId: null,
   loading: true,
   authChecked: false,
   lancamentos: [],
@@ -269,6 +297,7 @@ const initialState: State = {
   votacoes: [],
   reunioes: [],
   config: defaultConfig,
+  perfil: PERFIL_VAZIO,
 };
 
 function loadCache(): Partial<State> {
@@ -318,6 +347,7 @@ async function loadAllData() {
       { data: votacoes, error: e5 },
       { data: reunioes, error: e6 },
       { data: config, error: e7 },
+      { data: perfil, error: e8 },
     ] = await Promise.all([
       supabase.from("lancamentos").select("*").order("data", { ascending: false }),
       supabase.from("fases").select("*").order("ordem"),
@@ -326,9 +356,12 @@ async function loadAllData() {
       supabase.from("votacoes").select("*").order("criado_em", { ascending: false }),
       supabase.from("reunioes").select("*").order("data", { ascending: false }),
       supabase.from("configuracoes").select("*").eq("id", 1).single(),
+      state.userId
+        ? supabase.from("profiles").select("nome,cpf,telefone,banco,agencia,conta,chave_pix").eq("id", state.userId).maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
     ]);
 
-    const erros = [e1, e2, e3, e4, e5, e6, e7].filter(Boolean);
+    const erros = [e1, e2, e3, e4, e5, e6, e7, e8].filter(Boolean);
     if (erros.length > 0) {
       console.error("[Store] Erros nas queries:", erros);
     }
@@ -353,6 +386,7 @@ async function loadAllData() {
       config: config
         ? { metaObra: Number(config.meta_obra), percReserva: Number(config.perc_reserva), modeloFinanceiro: config.modelo_financeiro }
         : defaultConfig,
+      perfil: mapPerfil(perfil),
     };
     persist();
     notify();
@@ -413,24 +447,24 @@ if (typeof window !== "undefined") {
         if (session?.user) {
           const socioId = await resolverSocio(session.user);
           if (socioId) {
-            state = { ...state, sessao: socioId, authChecked: true, loading: true };
+            state = { ...state, sessao: socioId, userId: session.user.id, authChecked: true, loading: true };
             notify();
             loadAllData();
           } else {
             console.error("[auth] resolverSocio null para:", session.user.email);
-            state = { ...state, sessao: null, authChecked: true, loading: false };
+            state = { ...state, sessao: null, userId: null, authChecked: true, loading: false };
             notify();
             await supabase.auth.signOut();
           }
         } else {
-          state = { ...state, sessao: null, authChecked: true, loading: false };
+          state = { ...state, sessao: null, userId: null, authChecked: true, loading: false };
           notify();
         }
       } else if (event === "TOKEN_REFRESHED") {
         if (session?.user && !state.sessao) {
           const socioId = await resolverSocio(session.user);
           if (socioId) {
-            state = { ...state, sessao: socioId, authChecked: true };
+            state = { ...state, sessao: socioId, userId: session.user.id, authChecked: true };
             notify();
           }
         }
@@ -477,7 +511,7 @@ export const actions = {
     }
     // Seta estado ANTES de retornar — garante que sessao já está definida
     // quando o componente de login chamar router.navigate, evitando race condition.
-    state = { ...state, sessao: socioId, authChecked: true, loading: true };
+    state = { ...state, sessao: socioId, userId: data.user.id, authChecked: true, loading: true };
     notify();
     loadAllData();
     return { socio: SOCIOS.find((s) => s.id === socioId) ?? null, erro: null };
@@ -499,6 +533,32 @@ export const actions = {
     const { error } = await supabase.auth.updateUser({ password: novaSenha });
     if (error) return { ok: false, erro: error.message };
     await supabase.auth.signOut();
+    return { ok: true, erro: null };
+  },
+
+  // Perfil / dados cadastrais
+  async updatePerfil(patch: Partial<PerfilCadastral>): Promise<{ ok: boolean; erro: string | null }> {
+    if (!state.userId) return { ok: false, erro: "Sessão inválida — faça login novamente." };
+    const novoPerfil = { ...state.perfil, ...patch };
+    const backup = state.perfil;
+    state = { ...state, perfil: novoPerfil };
+    persist();
+    notify();
+    const dbPatch: Record<string, string> = {};
+    if (patch.nome !== undefined) dbPatch.nome = patch.nome;
+    if (patch.cpf !== undefined) dbPatch.cpf = patch.cpf;
+    if (patch.telefone !== undefined) dbPatch.telefone = patch.telefone;
+    if (patch.banco !== undefined) dbPatch.banco = patch.banco;
+    if (patch.agencia !== undefined) dbPatch.agencia = patch.agencia;
+    if (patch.conta !== undefined) dbPatch.conta = patch.conta;
+    if (patch.chavePix !== undefined) dbPatch.chave_pix = patch.chavePix;
+    const { error } = await supabase.from("profiles").update(dbPatch).eq("id", state.userId);
+    if (error) {
+      state = { ...state, perfil: backup };
+      persist();
+      notify();
+      return { ok: false, erro: error.message };
+    }
     return { ok: true, erro: null };
   },
 
